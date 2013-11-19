@@ -26,6 +26,28 @@ module Glider
 			workflows << workflow_type
 		end
 
+		# array of workers, one for each workflow type
+		def build_workflows_workers
+			workflows.map do |workflow_type|
+				target_method = self.method(workflow_type.name)
+				Proc.new do
+					$logger.info "Startig worker for #{workflow_type.name} (class: #{self})"
+					loop do
+						#target_method.bind self
+						target_method.call "TEST!"
+						$logger.info "Polling #{workflow_type.name}"
+						domain.decision_tasks.poll workflow_type.name do |task|
+							$logger.info "Processing task #{task}"
+							task.new_events.each do |event| 
+								$logger.info "Processing #{event.event_type}"
+								target_method.call event.event_type
+							end
+						end
+					end
+				end
+			end
+		end
+
 	end
 
 end

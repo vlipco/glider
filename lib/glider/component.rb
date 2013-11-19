@@ -26,11 +26,27 @@ module Glider
 			end
 		end
 
-		def start_workers
-			puts "Starting workers for #{activities} and #{workflows}"
+		# tracks forks/threads started by this
+		def children
+			@children ||= []
 		end
 
-		def start_execution(name, version, input=nil)
+		def waitall
+			children.each{|t| t.join} # Wait until threads finish
+		end
+
+		def start_workers
+			puts "Starting workers for #{activities} and #{workflows}"
+			build_workflows_workers.each do |workflow_worker|
+				children << Thread.new do
+					workflow_worker.call
+				end
+			end
+			waitall
+		end
+
+		def exit
+			start_execution(name, version, input=nil)
 			domain.workflow_types[name.to_s, version].start_execution input: input
 		end
 

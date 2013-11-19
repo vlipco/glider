@@ -28,6 +28,19 @@ module Glider
 			activities << activity_type
 		end
 
+		# returns the array of workers, one for each activity type
+		def build_activities_workers
+			activities.map do |activity_type|
+				Proc.new do
+					loop do
+						domain.decision_tasks.poll activity_type.name do |task|
+							task.new_events.each {|event| method(activity_type.name).call event.event_type}
+						end
+					end
+				end
+			end
+		end
+
 	end
 
 end
