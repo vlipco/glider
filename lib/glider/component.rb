@@ -44,7 +44,9 @@ module Glider
 			end
 
 			def start_workers
-				puts "Starting workers for #{activities} and #{workflows}"
+				activities_list = activities.map {|act| "#{act.name}-#{act.version}"}
+				workflows_list = workflows.map {|wf| "#{wf.name}-#{wf.version}"}
+				$logger.info "Starting workers for #{activities_list} and #{workflows_list}"
 				build_workflows_workers.each do |workflow_worker|
 					children << Thread.new do
 						workflow_worker.call

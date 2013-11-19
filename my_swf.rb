@@ -16,9 +16,16 @@ class MySWF < Glider::Component
 	end
 
 
-	def say_hi(input)
-		$logger.info "====> Executing say_hi. Input: #{input}. #{event.event_type}"
-		# TODO perform some task
+	def say_hi(event_name, data)
+		case event_name
+		when :workflow_execution_started
+			#task.complete_workflow_execution and task.complete!
+			$logger.info "say_hi event=#{event_name} data=#{data}"
+		else
+			$logger.warn "say_hi event=#{event_name} data=#{data}"
+			# TODO perform some task
+
+		end
 	end
 
 	# possible events

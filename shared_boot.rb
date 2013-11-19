@@ -5,7 +5,18 @@ Bundler.require :default
 $logger = Logger.new STDOUT
 
 $logger.formatter = proc do |severity, datetime, progname, msg|
-  "#{severity} #{datetime.strftime '%H:%M:%S'} #{msg}\n"
+	color = case severity.to_s
+			when "INFO"
+				:blue
+			when "WARN"
+				:yellow
+			when "ERROR"
+				:red
+			else
+				:default
+			end
+	
+  	"#{severity} #{datetime.strftime '%H:%M:%S'} \t#{msg.to_s.colorize color}\n"
 end
 
 env_crendentials = (AWS::Core::CredentialProviders::ENVProvider.new "AWS").get_credentials
