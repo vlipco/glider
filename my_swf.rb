@@ -17,7 +17,7 @@ class MySWF < Glider::Component
 
 
 	def say_hi(input)
-		$logger.info "====> Executing say_hi. Input: #{input}."
+		$logger.info "====> Executing say_hi. Input: #{input}. #{event.event_type}"
 		# TODO perform some task
 	end
 

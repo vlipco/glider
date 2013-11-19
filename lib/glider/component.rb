@@ -4,6 +4,13 @@ module Glider
 
 	class Component
 
+		attr_reader :task, :event
+
+		def initialize(task, event)
+			@task = task
+			@event = event
+		end
+
 		class << self
 			def swf
 				@swf ||= AWS::SimpleWorkflow.new

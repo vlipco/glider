@@ -3,6 +3,9 @@
 module Glider
 
 	class Component
+
+		
+
 		class << self
 			def workflows
 				@workflows ||= []
@@ -54,15 +57,17 @@ module Glider
 					$logger.info "Startig worker for #{workflow_type.name} (class: #{self})"
 					loop do
 						#target_method.bind self
-						target_method = self.new.method(workflow_type.name)
-						target_method.call "TEST!"
+						
 						$logger.info "Polling #{workflow_type.name}"
 						domain.decision_tasks.poll workflow_type.name do |task|
 							$logger.info "Processing task #{task}"
 							task.new_events.each do |event| 
 								event_name = ActiveSupport::Inflector.underscore(event.event_type).to_sym
 								#binding.pry
-								target_method.call event_name if should_call_workflow_target? event_name
+								target_instance = self.new task, event
+								 if should_call_workflow_target? event_name
+									target_instance.send workflow_type.name, event_name
+								end
 							end
 						end
 					end
