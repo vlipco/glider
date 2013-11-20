@@ -8,53 +8,30 @@ class MySWF < Glider::Component
 	register_activity :hello_world, '1.0'
 	register_workflow :say_hi, '1.0'#, initial_activity: [:settle, '1.0']
 
-
-
 	def hello_world(input)
+		task.record_heartbeat! :details => '25%'
 		$logger.info "Executing hello_world. Input: #{input}. Returning current time"
+		task.record_heartbeat! :details => '50%'
 		Time.now.to_s
 	end
 
-
 	def say_hi(event_name, data)
+		$logger.info "say_hi event=#{event_name} data=#{data}"
+		# TODO :workflow_execution_started, how to handle??
 		case event_name
-		when :workflow_execution_started
-			#task.complete_workflow_execution and task.complete!
-			$logger.info "say_hi event=#{event_name} data=#{data}"
+		when :decision_task_started
+			$logger.info "say_hi scheduled hello_world"
+			task.schedule_activity_task({name: 'hello_world', version: '1.0'})
+
+		when :activity_task_completed
+			task.complete_workflow_execution result: data
+			task.complete!
 		else
 			$logger.warn "say_hi event=#{event_name} data=#{data}"
 			# TODO perform some task
-
 		end
 	end
-
-	# possible events
-	#WorkflowExecutionCompleted
-	#ActivityTaskCompleted
-	#ActivityTaskStarted
-	#ActivityTaskScheduled
-	#DecisionTaskCompleted
-	#DecisionTaskStarted
-	#DecisionTaskScheduled
-	#WorkflowExecutionStarted
-
-	#def say_hi(event_name, data)
-	#	case event_name
-	#	when :workflow_execution_started
-	#		data # input event.attributes.input
-	#	else
-	#		case event_name
-	#		when :completed_settlement
-	#			data # resultado de settlement event.attributes.result
-	#			
-	#	end
-	#end
 	
+	start_workers
+
 end
-
-#binding.pry
-
-MySWF.start_workers
-#execution = MySWF.start_execution :say_hi, '1.0', "ALOHA"
-#$logger.info "#{execution.status} id: #{execution.workflow_id}"
-

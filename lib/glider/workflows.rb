@@ -33,38 +33,33 @@ module Glider
 				case event_name
 				when 	:activity_task_completed,
 						:workflow_execution_started,
-						:workflow_execution_signaled #,
+						:workflow_execution_signaled,
+						:decision_task_started,
+						:decision_task_timed_out
 						#:decision_task_scheduled
-
 					$logger.info "Calling target decider for #{event_name}"
 					return true
 				else
-					$logger.debug "Skipping call for event #{event_name}"
+					$logger.warn "Skipping call for decider event #{event_name}"
 					return false
 				end
-				# possible events
-		#WorkflowExecutionCompleted
-		#ActivityTaskCompleted
-		#ActivityTaskStarted
-		#ActivityTaskScheduled
-		#DecisionTaskCompleted
-		#DecisionTaskStarted
-		#decision_task_timed_out
-		#DecisionTaskScheduled
-		#WorkflowExecutionStarted
-					
 			end
 
 			def workflow_data_for(event_name, event)
 				case event_name
 				when :workflow_execution_started #:decision_task_scheduled
 					event.attributes.input
-				when :activity_task_completed
-					event.attributes.result
 				when :workflow_execution_signaled
 					begin event.attributes.input rescue nil end
+				when :activity_task_completed
+					begin event.attributes.result rescue nil end
 				else
-					raise "#{event_name} should ask for data"
+					begin 
+						event.attributes.result
+					rescue
+						$logger.debug "No result for #{event_name}, attributes: #{event.attributes.to_h}"
+						nil
+					end
 				end 
 			end
 
@@ -86,6 +81,7 @@ module Glider
 
 						# TODO ensure continuity in execution aka something was scheduled
 					end
+				
 				end
 			end
 
@@ -94,7 +90,7 @@ module Glider
 					$logger.info "Startig worker for #{workflow_type.name} (class: #{self})"
 					domain.decision_tasks.poll workflow_type.name do |decision_task|
 						process_decision_task workflow_type, decision_task
-
+					
 						# task.complete! will be called by default
 						# hence, we need to signal this wasn't responded
 						# so that a new decision is scheduled
@@ -106,11 +102,12 @@ module Glider
 							decision_task.fail_workflow_execution reason: "UNHANDLED_DECISION"
 							decision_task.complete!
 							$logger.error "workflow #{workflow_type.name} didn't made any decisions for workflow_id=#{decision_task.workflow_execution.workflow_id} failing execution"
+						#else
+						#	decision_task.complete!
 						end
 						#	$logger.warn "Decision task wasn't manually completed. Signaling decision_pending workflow_id=#{#decision_task.workflow_execution.workflow_id}"
 						#	decision_task.workflow_execution.signal "decision_pending"
 						#end
-							
 					end
 				end
 			end

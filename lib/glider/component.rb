@@ -6,7 +6,7 @@ module Glider
 
 		attr_reader :task, :event
 
-		def initialize(task, event)
+		def initialize(task, event=nil)
 			@task = task
 			@event = event
 		end
@@ -16,10 +16,12 @@ module Glider
 				@swf ||= AWS::SimpleWorkflow.new
 			end
 
+			# both setter and getter
 			def workers(workers_count=nil)
 				workers_count ? @workers = workers_count : @workers
 			end
 
+			# both setter and getter
 			def domain(domain_name=nil, retention_period: 10)
 				if domain_name
 					begin
@@ -34,7 +36,7 @@ module Glider
 				end
 			end
 
-			# tracks forks/threads started by this
+			# tracks forks/threads started as workers
 			def children
 				@children ||= []
 			end
@@ -47,18 +49,15 @@ module Glider
 				activities_list = activities.map {|act| "#{act.name}-#{act.version}"}
 				workflows_list = workflows.map {|wf| "#{wf.name}-#{wf.version}"}
 				$logger.info "Starting workers for #{activities_list} and #{workflows_list}"
-				build_workflows_workers.each do |workflow_worker|
+				all_workers = [build_workflows_workers, build_activities_workers].flatten
+				all_workers.each do |workflow_worker|
 					children << Thread.new do
-						workflow_worker.call
+						@workers.times {|i| workflow_worker.call}
 					end
 				end
 				waitall
 			end
 
-			def execute
-				start_execution(name, version, input=nil)
-				domain.workflow_types[name.to_s, version].start_execution input: input
-			end
 		end
 
 	end

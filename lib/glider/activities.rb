@@ -4,6 +4,7 @@ module Glider
 
 	class Component
 		class << self
+
 			def activities
 				@activities ||= []
 			end
@@ -28,18 +29,31 @@ module Glider
 				activities << activity_type
 			end
 
-			# returns the array of workers, one for each activity type
-			def build_activities_workers
-				activities.map do |activity_type|
-					Proc.new do
-						loop do
-							domain.decision_tasks.poll activity_type.name do |task|
-								task.new_events.each {|event| method(activity_type.name).call event.event_type}
-							end
+
+
+			def loop_block_for_activity(activity_type)
+				Proc.new do
+					$logger.info "Startig worker for #{activity_type.name} activity (class: #{self})"
+					domain.activity_tasks.poll activity_type.name do |activity_task|
+						begin
+							target_instance = self.new activity_task
+							activity_result = target_instance.send activity_type.name, activity_task.input
+							activity_task.complete! result: activity_result.to_s
+						rescue ActivityTask::CancelRequestedError
+							# cleanup after ourselves
+							activity_task.cancel!
 						end
 					end
 				end
 			end
+
+			# array of workers, one for each activity type
+			def build_activities_workers
+				activities.map do |activity_type|
+					loop_block_for_activity activity_type
+				end
+			end
+
 		end
 
 	end
