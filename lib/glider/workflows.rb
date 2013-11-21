@@ -34,8 +34,8 @@ module Glider
 				when 	:activity_task_completed,
 						:workflow_execution_started,
 						:workflow_execution_signaled,
-						:decision_task_started,
-						:decision_task_timed_out
+						:decision_task_timed_out#,
+						#:decision_task_started
 						#:decision_task_scheduled
 					$logger.info "Calling target decider for #{event_name}"
 					return true
@@ -57,10 +57,20 @@ module Glider
 					begin 
 						event.attributes.result
 					rescue
-						$logger.debug "No result for #{event_name}, attributes: #{event.attributes.to_h}"
+						$logger.debug "No result (data) for #{event_name}, attributes: #{event.attributes.to_h}"
 						nil
 					end
 				end 
+			end
+
+			# let's us determine if :decised_task_started should be called :workflow_execution_started
+			def has_previous_decisions?(workflow_execution)
+				workflow_execution.history_events.each do |event|
+					event_type = ActiveSupport::Inflector.underscore(event.event_type).to_sym
+					return true if event_type == :decision_task_completed
+				end
+				$logger.warn "No previous decision found for #{workflow_execution.workflow_id}"
+				return false
 			end
 
 			def process_decision_task(workflow_type, task)
@@ -71,11 +81,14 @@ module Glider
 					 	target_instance = self.new task, event
 					 	data = workflow_data_for(event_name, event)
 					 	# convert signals to event names!
-
-					 	if event_name == :workflow_execution_signaled
+					 	case event_name
+					 	when :workflow_execution_signaled
 					 		signal_name = event.attributes.signal_name
-							event_name = signal_name == "decision_pending" ? 
-											:workflow_execution_started : signal_name
+						when :decision_task_started
+							unless has_previous_decisions? task.workflow_execution
+								$logger.error "RENAMING EVENT"
+								event_name = :workflow_execution_started
+							end
 						end
 						target_instance.send workflow_type.name, event_name, data
 

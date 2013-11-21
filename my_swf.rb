@@ -19,12 +19,13 @@ class MySWF < Glider::Component
 		$logger.info "say_hi event=#{event_name} data=#{data}"
 		# TODO :workflow_execution_started, how to handle??
 		case event_name
-		when , :workflow_execution_started
+		when :workflow_execution_started
+			$logger.info "say_hi scheduled hello_world"
+			task.schedule_activity_task({name: 'hello_world', version: '1.0'})
 		when :redirection_completed_signal
 			data
 		when :decision_task_started
-			$logger.info "say_hi scheduled hello_world"
-			task.schedule_activity_task({name: 'hello_world', version: '1.0'})
+			raise "I should never happen!"
 			#task.complete!
 		when :activity_task_completed
 			task.complete_workflow_execution result: data
