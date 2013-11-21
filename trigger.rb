@@ -1,8 +1,8 @@
 require_relative 'shared_boot'
 
 def trigger
-	Glider.execute :glider_test, :say_hi, '1.1', "ALOHA"
-	#Glider.signal :glider_test, "workflow_id", :redireciton_completed
+	execution = Glider.execute :glider_test, :say_hi, '1.0', "ALOHA"
+	Glider.signal :glider_test, execution.workflow_id, :test
 end
 
 $logger.info "call trigger to execute :say_hi"

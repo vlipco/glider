@@ -71,24 +71,33 @@ module Glider
 					begin 
 						event.attributes.result
 					rescue
-						$logger.debug "no input or result in event, data will be nil event=#{event_name} attributes=#{event.attributes.to_h}"
+						$logger.warn "no input or result in event, data will be nil event=#{event_name} attributes=#{event.attributes.to_h}"
 						nil
 					end
 				end 
 			end
 
 			def process_decision_task(workflow_type, task)
-				$logger.info "\nProcessing decision task workflow_id=#{task.workflow_execution.workflow_id}"
+				$logger.info "---"
+				$logger.info "Processing decision task workflow_id=#{task.workflow_execution.workflow_id}"
 				task.new_events.each do |event| 
 					event_name = ActiveSupport::Inflector.underscore(event.event_type).to_sym
 					if should_call_workflow_target? event_name, task.workflow_execution
 					 	target_instance = self.new task, event
 					 	data = workflow_data_for(event_name, event)
 					 	# convert signals to event names!
-					 	if event_name == :workflow_execution_signaled
-					 		event_name = "#{event.attributes.signal_name}_signal"
+					 	case event_name
+					 	when :workflow_execution_signaled
+					 		event_name = "#{event.attributes.signal_name}_signal".to_sym
+					 	when :activity_task_completed
+					 		# taken from SimplerWorkflow
+					 		completed_event = task.workflow_execution.events.reverse_order.find do |e| 
+					 			e.id == event.attributes.scheduled_event_id
+					 		end
+					 		inflected_name = ActiveSupport::Inflector.underscore completed_event.attributes.activity_type.name
+					 		event_name = "#{inflected_name}_activity_completed".to_sym
 						end
-						target_instance.send workflow_type.name, event_name, data
+						target_instance.send workflow_type.name, event_name, event, data
 
 						# ensure proper response was given (aka a decision taken)
 						decisions = task.instance_eval {@decisions}
