@@ -5,7 +5,7 @@ class MySWF < Glider::Component
 	workers 1
 	domain :glider_test
 
-	register_activity :hello_world, '1.0'
+	#register_activity :hello_world, '1.0'
 	register_workflow :say_hi, '1.0'#, initial_activity: [:settle, '1.0']
 
 	def hello_world(input)
@@ -32,6 +32,7 @@ class MySWF < Glider::Component
 			task.complete! # NOT OPTIONAL
 		else
 			$logger.warn "say_hi event=#{event_name} data=#{data}"
+			task.complete!
 			# TODO perform some task
 		end
 	end
