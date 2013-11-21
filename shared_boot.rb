@@ -3,6 +3,7 @@ require 'bundler/setup'
 Bundler.require :default
 
 $logger = Logger.new STDOUT
+$logger.level = Logger::INFO
 
 $logger.formatter = proc do |severity, datetime, progname, msg|
 	color = case severity.to_s

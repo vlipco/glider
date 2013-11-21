@@ -5,8 +5,8 @@ class MySWF < Glider::Component
 	workers 1
 	domain :glider_test
 
-	#register_activity :hello_world, '1.0'
-	register_workflow :say_hi, '1.0'#, initial_activity: [:settle, '1.0']
+	#register_activity :hello_world, '1.1'
+	register_workflow :say_hi, '1.1'#, initial_activity: [:settle, '1.1']
 
 	def hello_world(input)
 		task.record_heartbeat! :details => '25%'
@@ -21,7 +21,7 @@ class MySWF < Glider::Component
 		case event_name
 		when :workflow_execution_started
 			$logger.info "say_hi scheduled hello_world"
-			task.schedule_activity_task({name: 'hello_world', version: '1.0'})
+			task.schedule_activity_task({name: 'hello_world', version: '1.1'})
 		when :redirection_completed_signal
 			data
 		when :decision_task_started
@@ -31,7 +31,7 @@ class MySWF < Glider::Component
 			task.complete_workflow_execution result: data
 			task.complete! # NOT OPTIONAL
 		else
-			$logger.warn "say_hi event=#{event_name} data=#{data}"
+			$logger.warn "Completing task for #{event_name}"
 			task.complete!
 			# TODO perform some task
 		end

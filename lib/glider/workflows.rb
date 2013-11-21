@@ -16,7 +16,7 @@ module Glider
 				default_options = {
 					:default_task_list => name.to_s,
 					:default_child_policy => :request_cancel,
-					:default_task_start_to_close_timeout => 5,
+					:default_task_start_to_close_timeout => 10,
 					:default_execution_start_to_close_timeout => 60
 				}
 				options = default_options.merge options
@@ -35,7 +35,6 @@ module Glider
                             event_type = ActiveSupport::Inflector.underscore(event.event_type).to_sym
                             return true if event_type == :decision_task_completed
                     end
-                    $logger.warn "No previous decision found for #{workflow_execution.workflow_id}"
                     return false
             end
 
@@ -44,8 +43,8 @@ module Glider
 				when 	:activity_task_scheduled,
 						:activity_task_started,
 						:decision_task_scheduled,
-						:decision_task_completed,
 						:decision_task_started,
+						:decision_task_completed,
 						:marker_recorded,
 						:timer_started,
 						:start_child_workflow_execution_initiated,
@@ -53,14 +52,9 @@ module Glider
 						:signal_external_workflow_execution_initiated,
 						:request_cancel_external_workflow_execution_initiated
 
-					$logger.warn "Skipping call for decider event #{event_name}"
+					$logger.debug "Skipping decider call event=#{event_name} workflow_id=#{workflow_execution.workflow_id}"
 					return false
 				else
-					$logger.info "Calling target decider for #{event_name}"
-					if event_name == :decision_task_started && has_previous_decisions?(workflow_execution)
-						$logger.error "SKIPPING DECISION TASK STARTED FOR FIRST EXECUTION"
-						return false 
-					end
 					return true
 				end
 			end
@@ -77,14 +71,14 @@ module Glider
 					begin 
 						event.attributes.result
 					rescue
-						$logger.debug "No result (data) for #{event_name}, attributes: #{event.attributes.to_h}"
+						$logger.debug "no input or result in event, data will be nil event=#{event_name} attributes=#{event.attributes.to_h}"
 						nil
 					end
 				end 
 			end
 
 			def process_decision_task(workflow_type, task)
-				$logger.info "Processing decision task workflow_id=#{task.workflow_execution.workflow_id}"
+				$logger.info "\nProcessing decision task workflow_id=#{task.workflow_execution.workflow_id}"
 				task.new_events.each do |event| 
 					event_name = ActiveSupport::Inflector.underscore(event.event_type).to_sym
 					if should_call_workflow_target? event_name, task.workflow_execution
@@ -99,11 +93,13 @@ module Glider
 						# ensure proper response was given (aka a decision taken)
 						decisions = task.instance_eval {@decisions}
 						$logger.debug decisions
-						if decisions.length == 0
+						if decisions.length == 0 && !task.responded?
 							# the decider didn't add any decision
 							# force failure to avoid stalled executions in the domain
-							task.fail_workflow_execution reason: "UNHANDLED_DECISION"
+							binding.pry
+							#raise "No decision for #{event_name}"
 							task.complete!
+							task.fail_workflow_execution reason: "UNHANDLED_DECISION"
 							$logger.error "workflow #{workflow_type.name} didn't made any decisions for workflow_id=#{task.workflow_execution.workflow_id} failing execution"
 						end
 					end

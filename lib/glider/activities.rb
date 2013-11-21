@@ -12,10 +12,8 @@ module Glider
 			def register_activity(name, version, options={})
 				default_options = {
 					:default_task_list => name.to_s,
-					:default_task_heartbeat_timeout => 900,
-					:default_task_schedule_to_start_timeout => 60,
-					:default_task_schedule_to_close_timeout => 3660,
-					:default_task_start_to_close_timeout => 3600
+					:default_task_schedule_to_start_timeout => 10,
+					:default_task_start_to_close_timeout => 60
 				}
 
 				options = default_options.merge options
