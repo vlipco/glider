@@ -9,3 +9,7 @@ require 'glider/process_manager'
 
 require 'glider/workflows'
 require 'glider/activities'
+
+module Glider
+  VERSION = "0.1"
+end
