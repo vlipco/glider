@@ -26,7 +26,9 @@ module Glider
 					# already registered
 					workflow_type = domain.workflow_types[name.to_s, version]
 				end
-				workflows << workflow_type
+				workers.times do 
+					ProcessManager.register_worker loop_block_for_workflow(workflow_type)
+				end
 			end
 
 			# let's us determine if :decised_task_started should be called :workflow_execution_started
@@ -97,7 +99,9 @@ module Glider
 					 		inflected_name = ActiveSupport::Inflector.underscore completed_event.attributes.activity_type.name
 					 		event_name = "#{inflected_name}_activity_completed".to_sym
 						end
-						target_instance.send workflow_type.name, event_name, event, data
+						task_lock! do
+							target_instance.send workflow_type.name, event_name, event, data
+						end
 
 						# ensure proper response was given (aka a decision taken)
 						decisions = task.instance_eval {@decisions}
@@ -105,8 +109,6 @@ module Glider
 						if decisions.length == 0 && !task.responded?
 							# the decider didn't add any decision
 							# force failure to avoid stalled executions in the domain
-							binding.pry
-							#raise "No decision for #{event_name}"
 							task.complete!
 							task.fail_workflow_execution reason: "UNHANDLED_DECISION"
 							$logger.error "workflow #{workflow_type.name} didn't made any decisions for workflow_id=#{task.workflow_execution.workflow_id} failing execution"
@@ -117,19 +119,14 @@ module Glider
 
 			def loop_block_for_workflow(workflow_type)
 				Proc.new do
-					$logger.info "Startig worker for #{workflow_type.name} (class: #{self})"
+					signal_handling
+					$logger.info "Startig worker for #{workflow_type.name} (pid #{Process.pid})"
 					domain.decision_tasks.poll workflow_type.name do |decision_task|
 						process_decision_task workflow_type, decision_task
 					end
 				end
 			end
 
-			# array of workers, one for each workflow type
-			def build_workflows_workers
-				workflows.map do |workflow_type|
-					loop_block_for_workflow workflow_type
-				end
-			end
 		end
 
 	end

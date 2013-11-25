@@ -24,14 +24,17 @@ module Glider
 					# already registered
 					activity_type = domain.activity_types[name.to_s, version]
 				end
-				activities << activity_type
+				workers.times do 
+					ProcessManager.register_worker loop_block_for_activity(activity_type)
+				end
 			end
 
 
 
 			def loop_block_for_activity(activity_type)
 				Proc.new do
-					$logger.info "Startig worker for #{activity_type.name} activity (class: #{self})"
+					signal_handling
+					$logger.info "Startig worker for #{activity_type.name} activity (pid #{Process.pid})"
 					domain.activity_tasks.poll activity_type.name do |activity_task|
 						begin
 							target_instance = self.new activity_task
@@ -45,12 +48,6 @@ module Glider
 				end
 			end
 
-			# array of workers, one for each activity type
-			def build_activities_workers
-				activities.map do |activity_type|
-					loop_block_for_activity activity_type
-				end
-			end
 
 		end
 

@@ -11,14 +11,42 @@ module Glider
 			@event = event
 		end
 
+
 		class << self
+
+			def task_lock!
+				@in_task = true
+				yield
+			ensure
+				@in_task = false
+				Process.exit 0 if @time_to_exit # in case an exit signal was received during task processing
+			end
+
+			def graceful_exit
+				if @in_task
+					@time_to_exit = true
+				else
+					Process.exit 0
+				end
+			end
+
+			def signal_handling
+				Signal.trap('QUIT') do
+					graceful_exit
+				end
+
+				Signal.trap('INT') do
+					graceful_exit
+				end
+			end
+
 			def swf
 				@swf ||= AWS::SimpleWorkflow.new
 			end
 
 			# both setter and getter
 			def workers(workers_count=nil)
-				workers_count ? @workers = workers_count : @workers
+				workers_count ? @workers = workers_count : @workers ||= 1
 			end
 
 			# both setter and getter
@@ -34,28 +62,6 @@ module Glider
 				else
 					@domain
 				end
-			end
-
-			# tracks forks/threads started as workers
-			def children
-				@children ||= []
-			end
-
-			def waitall
-				children.each{|t| t.join} # Wait until threads finish
-			end
-
-			def start_workers
-				activities_list = activities.map {|act| "#{act.name}-#{act.version}"}
-				workflows_list = workflows.map {|wf| "#{wf.name}-#{wf.version}"}
-				$logger.info "Starting workers for #{activities_list} and #{workflows_list}"
-				all_workers = [build_workflows_workers, build_activities_workers].flatten
-				all_workers.each do |workflow_worker|
-					children << Thread.new do
-						@workers.times {|i| workflow_worker.call}
-					end
-				end
-				waitall
 			end
 
 		end
