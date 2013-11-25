@@ -2,7 +2,7 @@ require_relative 'shared_boot'
 
 class MySWF < Glider::Component
 
-	workers 5
+	workers 10
 	domain :gt3
 
 	register_activity :hello_world, '1.5'

@@ -39,19 +39,24 @@ module Glider
 					$0 = "ruby #{activity_type.name}-#{activity_type.version}"
 					signal_handling
 					Glider.logger.info "Startig worker for #{activity_type.name} activity (pid #{Process.pid})"
-					domain.activity_tasks.poll activity_type.name do |activity_task|
-						task_lock! do
-							begin
-								workflow_id = activity_task.workflow_execution.workflow_id
-								Glider.logger.info "Executing activity=#{activity_type.name} workflow_id=#{workflow_id}"
-								target_instance = self.new activity_task
-								activity_result = target_instance.send activity_type.name, activity_task.input
-								activity_task.complete! result: activity_result.to_s
-							rescue AWS::SimpleWorkflow::ActivityTask::CancelRequestedError
-								# cleanup after ourselves
-								activity_task.cancel!
+					begin
+						domain.activity_tasks.poll activity_type.name do |activity_task|
+							task_lock! do
+								begin
+									workflow_id = activity_task.workflow_execution.workflow_id
+									Glider.logger.info "Executing activity=#{activity_type.name} workflow_id=#{workflow_id}"
+									target_instance = self.new activity_task
+									activity_result = target_instance.send activity_type.name, activity_task.input
+									activity_task.complete! result: activity_result.to_s
+								rescue AWS::SimpleWorkflow::ActivityTask::CancelRequestedError
+									# cleanup after ourselves
+									activity_task.cancel!
+								end
 							end
 						end
+					rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
+						$logger.error "An action relating to an expired workflow was sent. Probably the activity took longer than the execution timeout span. Killing activity process."
+						exit 1
 					end
 				end
 			end
