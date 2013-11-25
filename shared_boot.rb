@@ -17,7 +17,7 @@ $logger.formatter = proc do |severity, datetime, progname, msg|
 				:default
 			end
 	
-  	severity == "NONE" ? "\n" : "#{severity} #{datetime.strftime '%H:%M:%S'} \t#{msg.to_s.colorize color}\n"
+  	severity == "NONE" ? "\n" : "#{Process.pid} #{severity} #{datetime.strftime '%H:%M:%S'} \t#{msg.to_s.colorize color}\n"
 end
 
 env_crendentials = (AWS::Core::CredentialProviders::ENVProvider.new "AWS").get_credentials

@@ -12,8 +12,11 @@ module Glider
 			def register_activity(name, version, options={})
 				default_options = {
 					:default_task_list => name.to_s,
-					:default_task_schedule_to_start_timeout => 10,
-					:default_task_start_to_close_timeout => 60
+					:default_task_schedule_to_start_timeout => :none,
+					:default_task_start_to_close_timeout => 60,
+					:default_task_schedule_to_close_timeout => :none,
+					:default_task_heartbeat_timeout => :none
+
 				}
 
 				options = default_options.merge options
@@ -33,15 +36,18 @@ module Glider
 
 			def loop_block_for_activity(activity_type)
 				Proc.new do
+					$0 = "ruby #{activity_type.name}-#{activity_type.version}"
 					signal_handling
 					Glider.logger.info "Startig worker for #{activity_type.name} activity (pid #{Process.pid})"
 					domain.activity_tasks.poll activity_type.name do |activity_task|
 						task_lock! do
 							begin
+								workflow_id = activity_task.workflow_execution.workflow_id
+								Glider.logger.info "Executing activity=#{activity_type.name} workflow_id=#{workflow_id}"
 								target_instance = self.new activity_task
 								activity_result = target_instance.send activity_type.name, activity_task.input
 								activity_task.complete! result: activity_result.to_s
-							rescue ActivityTask::CancelRequestedError
+							rescue AWS::SimpleWorkflow::ActivityTask::CancelRequestedError
 								# cleanup after ourselves
 								activity_task.cancel!
 							end

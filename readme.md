@@ -25,3 +25,12 @@ WARN 15:16:42 	say_hi event=decision_task_started data=
 DEBUG 15:16:42 	[{:decision_type=>"CompleteWorkflowExecution", :complete_workflow_execution_decision_attributes=>{}}]
 
 terminations dont trigger decisions
+
+
+TODO:
+
+Proces monitoring
+activity task signaling
+
+Exec scoped logger
+instance methods

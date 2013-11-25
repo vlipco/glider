@@ -16,8 +16,8 @@ module Glider
 				default_options = {
 					:default_task_list => name.to_s,
 					:default_child_policy => :request_cancel,
-					:default_task_start_to_close_timeout => 10,
-					:default_execution_start_to_close_timeout => 60
+					:default_task_start_to_close_timeout => 10, # decider timeout
+					:default_execution_start_to_close_timeout => 120
 				}
 				options = default_options.merge options
 				begin
@@ -73,15 +73,25 @@ module Glider
 					begin 
 						event.attributes.result
 					rescue
-						Glider.logger.warn "no input or result in event, data will be nil event=#{event_name} attributes=#{event.attributes.to_h}"
+						Glider.logger.debug "no input or result in event, data will be nil event=#{event_name} attributes=#{event.attributes.to_h}"
 						nil
 					end
 				end 
 			end
 
+			# used for timeouts and activity task completed
+			def activity_name_for(task, event)
+				# taken from SimplerWorkflow
+		 		completed_event = task.workflow_execution.events.reverse_order.find do |e| 
+		 			e.id == event.attributes.scheduled_event_id
+		 		end
+		 		activity_name = completed_event.attributes.activity_type.name
+				inflected_name = ActiveSupport::Inflector.underscore activity_name
+			end
+
 			def process_decision_task(workflow_type, task)
-				Glider.logger.info "---"
-				Glider.logger.info "Processing decision task workflow_id=#{task.workflow_execution.workflow_id}"
+				workflow_id = task.workflow_execution.workflow_id
+				Glider.logger.info "Deciding workflow=#{workflow_type.name} workflow_id=#{workflow_id}"
 				task.new_events.each do |event| 
 					event_name = ActiveSupport::Inflector.underscore(event.event_type).to_sym
 					if should_call_workflow_target? event_name, task.workflow_execution
@@ -92,12 +102,9 @@ module Glider
 					 	when :workflow_execution_signaled
 					 		event_name = "#{event.attributes.signal_name}_signal".to_sym
 					 	when :activity_task_completed
-					 		# taken from SimplerWorkflow
-					 		completed_event = task.workflow_execution.events.reverse_order.find do |e| 
-					 			e.id == event.attributes.scheduled_event_id
-					 		end
-					 		inflected_name = ActiveSupport::Inflector.underscore completed_event.attributes.activity_type.name
-					 		event_name = "#{inflected_name}_activity_completed".to_sym
+					 		event_name = "#{activity_name_for(task, event)}_activity_completed".to_sym
+					 	when :activity_task_timed_out
+					 		event_name = "#{activity_name_for(task, event)}_activity_timed_out".to_sym
 						end
 						
 						target_instance.send workflow_type.name, event_name, event, data
@@ -108,10 +115,7 @@ module Glider
 						Glider.logger.debug decisions
 						if decisions.length == 0 && !task.responded?
 							# the decider didn't add any decision
-							# force failure to avoid stalled executions in the domain
-							task.complete!
-							task.fail_workflow_execution reason: "UNHANDLED_DECISION"
-							Glider.logger.error "workflow #{workflow_type.name} didn't made any decisions for workflow_id=#{task.workflow_execution.workflow_id} failing execution"
+							Glider.logger.warn "No decision made workflow=#{workflow_type.name}  workflow_id=#{task.workflow_execution.workflow_id}"
 						end
 					end
 				end
@@ -119,12 +123,18 @@ module Glider
 
 			def loop_block_for_workflow(workflow_type)
 				Proc.new do
+					$0 = "ruby #{workflow_type.name}-#{workflow_type.version}"
 					signal_handling
 					Glider.logger.info "Startig worker for #{workflow_type.name} (pid #{Process.pid})"
-					domain.decision_tasks.poll workflow_type.name do |decision_task|
-						task_lock! do
-							process_decision_task workflow_type, decision_task
+					begin
+						domain.decision_tasks.poll workflow_type.name do |decision_task|
+							task_lock! do
+								process_decision_task workflow_type, decision_task
+							end
 						end
+					rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
+						$logger.error "An action relating to an expired decision was sent. Probably the decider took longer than the decision timeout span. Killing decider process."
+						exit 1
 					end
 				end
 			end

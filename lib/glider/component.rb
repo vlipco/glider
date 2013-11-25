@@ -19,23 +19,19 @@ module Glider
 				yield
 			ensure
 				@in_task = false
-				Process.exit 0 if @time_to_exit # in case an exit signal was received during task processing
+				Process.exit! 0 if @time_to_exit # in case an exit signal was received during task processing
 			end
 
 			def graceful_exit
 				if @in_task
 					@time_to_exit = true
 				else
-					Process.exit 0
+					Process.exit! 0
 				end
 			end
 
 			def signal_handling
-				Signal.trap('QUIT') do
-					graceful_exit
-				end
-
-				Signal.trap('INT') do
+				Signal.trap('USR1') do
 					graceful_exit
 				end
 			end
