@@ -34,7 +34,7 @@ module Glider
 			def loop_block_for_activity(activity_type)
 				Proc.new do
 					signal_handling
-					$logger.info "Startig worker for #{activity_type.name} activity (pid #{Process.pid})"
+					Glider.logger.info "Startig worker for #{activity_type.name} activity (pid #{Process.pid})"
 					domain.activity_tasks.poll activity_type.name do |activity_task|
 						begin
 							target_instance = self.new activity_task

@@ -1,5 +1,9 @@
 module Glider
 
+	def Glider.logger
+		$logger ||= Logger.new STDOUT
+	end
+
 	def Glider.execute(domain_name, workflow_name, version, input)
 		swf = AWS::SimpleWorkflow.new
 		domain = swf.domains[domain_name.to_s]

@@ -54,7 +54,7 @@ module Glider
 						:signal_external_workflow_execution_initiated,
 						:request_cancel_external_workflow_execution_initiated
 
-					$logger.debug "Skipping decider call event=#{event_name} workflow_id=#{workflow_execution.workflow_id}"
+					Glider.logger.debug "Skipping decider call event=#{event_name} workflow_id=#{workflow_execution.workflow_id}"
 					return false
 				else
 					return true
@@ -73,15 +73,15 @@ module Glider
 					begin 
 						event.attributes.result
 					rescue
-						$logger.warn "no input or result in event, data will be nil event=#{event_name} attributes=#{event.attributes.to_h}"
+						Glider.logger.warn "no input or result in event, data will be nil event=#{event_name} attributes=#{event.attributes.to_h}"
 						nil
 					end
 				end 
 			end
 
 			def process_decision_task(workflow_type, task)
-				$logger.info "---"
-				$logger.info "Processing decision task workflow_id=#{task.workflow_execution.workflow_id}"
+				Glider.logger.info "---"
+				Glider.logger.info "Processing decision task workflow_id=#{task.workflow_execution.workflow_id}"
 				task.new_events.each do |event| 
 					event_name = ActiveSupport::Inflector.underscore(event.event_type).to_sym
 					if should_call_workflow_target? event_name, task.workflow_execution
@@ -105,13 +105,13 @@ module Glider
 
 						# ensure proper response was given (aka a decision taken)
 						decisions = task.instance_eval {@decisions}
-						$logger.debug decisions
+						Glider.logger.debug decisions
 						if decisions.length == 0 && !task.responded?
 							# the decider didn't add any decision
 							# force failure to avoid stalled executions in the domain
 							task.complete!
 							task.fail_workflow_execution reason: "UNHANDLED_DECISION"
-							$logger.error "workflow #{workflow_type.name} didn't made any decisions for workflow_id=#{task.workflow_execution.workflow_id} failing execution"
+							Glider.logger.error "workflow #{workflow_type.name} didn't made any decisions for workflow_id=#{task.workflow_execution.workflow_id} failing execution"
 						end
 					end
 				end
@@ -120,7 +120,7 @@ module Glider
 			def loop_block_for_workflow(workflow_type)
 				Proc.new do
 					signal_handling
-					$logger.info "Startig worker for #{workflow_type.name} (pid #{Process.pid})"
+					Glider.logger.info "Startig worker for #{workflow_type.name} (pid #{Process.pid})"
 					domain.decision_tasks.poll workflow_type.name do |decision_task|
 						process_decision_task workflow_type, decision_task
 					end
