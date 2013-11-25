@@ -36,13 +36,15 @@ module Glider
 					signal_handling
 					Glider.logger.info "Startig worker for #{activity_type.name} activity (pid #{Process.pid})"
 					domain.activity_tasks.poll activity_type.name do |activity_task|
-						begin
-							target_instance = self.new activity_task
-							activity_result = target_instance.send activity_type.name, activity_task.input
-							activity_task.complete! result: activity_result.to_s
-						rescue ActivityTask::CancelRequestedError
-							# cleanup after ourselves
-							activity_task.cancel!
+						task_lock! do
+							begin
+								target_instance = self.new activity_task
+								activity_result = target_instance.send activity_type.name, activity_task.input
+								activity_task.complete! result: activity_result.to_s
+							rescue ActivityTask::CancelRequestedError
+								# cleanup after ourselves
+								activity_task.cancel!
+							end
 						end
 					end
 				end

@@ -99,9 +99,9 @@ module Glider
 					 		inflected_name = ActiveSupport::Inflector.underscore completed_event.attributes.activity_type.name
 					 		event_name = "#{inflected_name}_activity_completed".to_sym
 						end
-						task_lock! do
-							target_instance.send workflow_type.name, event_name, event, data
-						end
+						
+						target_instance.send workflow_type.name, event_name, event, data
+						
 
 						# ensure proper response was given (aka a decision taken)
 						decisions = task.instance_eval {@decisions}
@@ -122,7 +122,9 @@ module Glider
 					signal_handling
 					Glider.logger.info "Startig worker for #{workflow_type.name} (pid #{Process.pid})"
 					domain.decision_tasks.poll workflow_type.name do |decision_task|
-						process_decision_task workflow_type, decision_task
+						task_lock! do
+							process_decision_task workflow_type, decision_task
+						end
 					end
 				end
 			end
