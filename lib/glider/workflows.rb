@@ -142,5 +142,4 @@ module Glider
 		end
 
 	end
-
 end
