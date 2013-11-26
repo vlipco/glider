@@ -59,8 +59,14 @@ module Glider
 									workflow_id = activity_task.workflow_execution.workflow_id
 									Glider.logger.info "Executing activity=#{activity_type.name} workflow_id=#{workflow_id}"
 									target_instance = self.new activity_task
-									activity_result = target_instance.send activity_type.name, process_input(activity_task.input)
-									activity_task.complete! result: activity_result.to_s unless activity_task.responded?
+									input = process_input(activity_task.input)
+									activity_result = target_instance.send activity_type.name, input
+									begin 
+										activity_task.complete! result: activity_result.to_s unless activity_task.responded?
+									rescue RuntimeError
+										# this error sometimes appear if failing and completing happen very close in time and SWF doesn't report correctly the responded? status
+										Glider.logger.warn "Ignoring error responding to activity task failed. Most likely caused because your task failed the activity already."
+									end
 								rescue AWS::SimpleWorkflow::ActivityTask::CancelRequestedError
 									# cleanup after ourselves
 									activity_task.cancel!

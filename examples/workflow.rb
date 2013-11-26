@@ -13,6 +13,8 @@ class MySWF < Glider::Component
 			task.schedule_activity_task activity(:hello_world, 1.5), input: data.to_json
 		when :test_signal
 			# do what?		
+		when :hello_world_activity_failed
+			$logger.error "EXPECTED ERROR!"
 		when :hello_world_activity_completed
 			task.complete_workflow_execution result: data
 		end
