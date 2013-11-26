@@ -71,6 +71,8 @@ module Glider
 							begin event.attributes.input rescue nil end
 						when :activity_task_completed
 							begin event.attributes.result rescue nil end
+						when :activity_task_failed
+							begin event.attributes.reason rescue nil end
 						else
 							begin 
 								event.attributes.result

@@ -15,6 +15,7 @@ module Glider
 		swf = AWS::SimpleWorkflow.new
 		domain = swf.domains[domain_name.to_s]
 		workflow_execution = domain.workflow_executions.with_workflow_id(workflow_id).with_status(:open).first
+		raise AWS::SimpleWorkflow::Errors::UnknownResourceFault.new unless workflow_execution
 		workflow_execution.signal signal_name.to_s, options
 	end
 end
