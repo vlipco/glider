@@ -79,8 +79,10 @@ module Glider
 								nil
 							end
 						end 
+				return data if data.nil?
 				# try to parse as JSON
 				begin
+
 					JSON.parse data
 				rescue JSON::ParserError
 					data

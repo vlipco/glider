@@ -11,6 +11,10 @@ module Glider
 			@event = event
 		end
 
+		def activity(name, version)
+			{name: name.to_s, version: version.to_s}
+		end
+
 
 		class << self
 
