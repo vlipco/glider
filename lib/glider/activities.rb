@@ -9,6 +9,10 @@ module Glider
 				@activities ||= []
 			end
 
+			def activity(name, version)
+				{name: name.to_s, version: version.to_s}
+			end
+
 			def register_activity(name, version, options={})
 				default_options = {
 					:default_task_list => name.to_s,

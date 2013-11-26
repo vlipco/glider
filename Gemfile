@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-gem 'aws-sdk', '>= 1.0.0'
+gem 'aws-sdk'
 gem 'activesupport', '>= 4.0.0', require: 'active_support/inflector'
 gem 'json'
 # Add dependencies to develop your gem here.
