@@ -38,7 +38,7 @@ module Glider
 				else
 					# try to parse input as json
 					begin
-						input = JSON.parse input
+						input = ActiveSupport::HashWithIndifferentAccess.new JSON.parse(input)
 					rescue JSON::ParserError
 						input
 					end

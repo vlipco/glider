@@ -14,7 +14,7 @@ GEM
       uuidtools (~> 2.1)
     coderay (1.1.0)
     colorize (0.6.0)
-    glider (0.1.6)
+    glider (0.1.8)
       activesupport (>= 4.0.0)
       aws-sdk
       json
@@ -40,5 +40,5 @@ PLATFORMS
 DEPENDENCIES
   aws-sdk
   colorize
-  glider (= 0.1.6)
+  glider (= 0.1.8)
   pry

@@ -4,7 +4,9 @@
 require 'json'
 require 'aws-sdk'
 require 'active_support/inflector'
-#require 'act'
+# For hash with indifferent access
+require 'active_support/core_ext/hash'
+
 
 require 'glider/utils'
 

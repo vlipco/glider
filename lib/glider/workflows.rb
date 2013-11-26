@@ -83,7 +83,7 @@ module Glider
 				# try to parse as JSON
 				begin
 
-					JSON.parse data
+					ActiveSupport::HashWithIndifferentAccess.new JSON.parse(data)
 				rescue JSON::ParserError
 					data
 				end
