@@ -8,6 +8,7 @@ class MySWF < Glider::Component
 	register_activity :hello_world, '1.5'
 
 	def hello_world(input)
+		binding.pry
 		task.fail! reason: "BECAUSE!" and return
 		$logger.warn "Executing hello_world."
 		sleep 2

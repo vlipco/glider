@@ -10,7 +10,7 @@ class MySWF < Glider::Component
 	def say_hi(event_name, event, data)
 		case event_name
 		when :workflow_execution_started, :hello_world_activity_timed_out
-			task.schedule_activity_task activity(:hello_world, 1.5)
+			task.schedule_activity_task activity(:hello_world, 1.5), input: data.to_json
 		when :test_signal
 			# do what?		
 		when :hello_world_activity_completed

@@ -32,6 +32,19 @@ module Glider
 				end
 			end
 
+			def process_input(input)
+				if input.nil?
+					nil
+				else
+					# try to parse input as json
+					begin
+						input = JSON.parse input
+					rescue JSON::ParserError
+						input
+					end
+				end
+			end
+
 
 
 			def loop_block_for_activity(activity_type)
@@ -46,7 +59,7 @@ module Glider
 									workflow_id = activity_task.workflow_execution.workflow_id
 									Glider.logger.info "Executing activity=#{activity_type.name} workflow_id=#{workflow_id}"
 									target_instance = self.new activity_task
-									activity_result = target_instance.send activity_type.name, activity_task.input
+									activity_result = target_instance.send activity_type.name, process_input(activity_task.input)
 									activity_task.complete! result: activity_result.to_s unless activity_task.responded?
 								rescue AWS::SimpleWorkflow::ActivityTask::CancelRequestedError
 									# cleanup after ourselves
