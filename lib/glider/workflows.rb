@@ -3,8 +3,10 @@
 module Glider
 
 	class Component
-
-		
+		#require 'rubygems'
+		#require 'active_support'
+		#require 'active_support/inflector'
+	
 
 		class << self
 			def workflows
@@ -142,5 +144,4 @@ module Glider
 		end
 
 	end
-
 end

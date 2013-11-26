@@ -1,3 +1,4 @@
+require 'logger'
 require 'rubygems'
 require 'bundler/setup'
 Bundler.require :default
@@ -36,4 +37,4 @@ else
 
 end
 
-require_relative 'lib/glider'
+
