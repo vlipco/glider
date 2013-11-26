@@ -1,6 +1,9 @@
-$LOAD_PATH << File.dirname(__FILE__)
+#$LOAD_PATH << File.dirname(__FILE__)
 
-require 'pry'
+#require 'active_support/all'
+require 'aws-sdk'
+require 'active_support/inflector'
+#require 'act'
 
 require 'glider/utils'
 
@@ -9,7 +12,3 @@ require 'glider/process_manager'
 
 require 'glider/workflows'
 require 'glider/activities'
-
-module Glider
-  VERSION = "0.1"
-end
