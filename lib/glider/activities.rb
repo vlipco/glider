@@ -22,10 +22,10 @@ module Glider
 				options = default_options.merge options
 
 				begin
-					activity_type = domain.activity_types.create name.to_s, version, options
+					activity_type = domain.activity_types.create name.to_s, version.to_s, options
 				rescue AWS::SimpleWorkflow::Errors::TypeAlreadyExistsFault
 					# already registered
-					activity_type = domain.activity_types[name.to_s, version]
+					activity_type = domain.activity_types[name.to_s, version.to_s]
 				end
 				workers.times do 
 					ProcessManager.register_worker loop_block_for_activity(activity_type)
@@ -47,7 +47,7 @@ module Glider
 									Glider.logger.info "Executing activity=#{activity_type.name} workflow_id=#{workflow_id}"
 									target_instance = self.new activity_task
 									activity_result = target_instance.send activity_type.name, activity_task.input
-									activity_task.complete! result: activity_result.to_s
+									activity_task.complete! result: activity_result.to_s unless activity_task.responded?
 								rescue AWS::SimpleWorkflow::ActivityTask::CancelRequestedError
 									# cleanup after ourselves
 									activity_task.cancel!

@@ -2,7 +2,7 @@ require_relative 'shared_boot'
 
 def trigger
 	puts "TRIGGER!"
-	execution = Glider.execute :gt3, :say_hi, '1.5', "ALOHA"
+	execution = Glider.execute :gt3, :say_hi, '1.5', input: {message: "ALOHA"}.to_json
 	#Glider.signal :glider_test, execution.workflow_id, :test
 	return execution
 end

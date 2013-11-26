@@ -10,6 +10,7 @@ class MySWF < Glider::Component
 	def say_hi(event_name, event, data)
 		case event_name
 		when :workflow_execution_started, :hello_world_activity_timed_out
+			binding.pry
 			act = {name: 'hello_world', version: '1.5'}
 			task.schedule_activity_task act
 		when :test_signal
