@@ -52,30 +52,35 @@ module Glider
 					$0 = "ruby #{activity_type.name}-#{activity_type.version}"
 					signal_handling
 					Glider.logger.info "Startig worker for #{activity_type.name} activity (pid #{Process.pid})"
-					begin
-						domain.activity_tasks.poll activity_type.name do |activity_task|
-							task_lock! do
-								begin
-									workflow_id = activity_task.workflow_execution.workflow_id
-									Glider.logger.info "Executing activity=#{activity_type.name} workflow_id=#{workflow_id}"
-									target_instance = self.new activity_task
-									input = process_input(activity_task.input)
-									activity_result = target_instance.send activity_type.name, input
-									begin 
+					loop do
+						begin
+							domain.activity_tasks.poll activity_type.name do |activity_task|
+								task_lock! do
+									begin
+										workflow_id = activity_task.workflow_execution.workflow_id
+										Glider.logger.info "Executing activity=#{activity_type.name} workflow_id=#{workflow_id}"
+										target_instance = self.new activity_task
+										input = process_input(activity_task.input)
+										activity_result = target_instance.send activity_type.name, input
+										 
 										activity_task.complete! result: activity_result.to_s unless activity_task.responded?
-									rescue RuntimeError
-										# this error sometimes appear if failing and completing happen very close in time and SWF doesn't report correctly the responded? status
-										Glider.logger.warn "Ignoring error responding to activity task failed. Most likely caused because your task failed the activity already."
+
+									rescue AWS::SimpleWorkflow::ActivityTask::CancelRequestedError
+										# cleanup after ourselves
+										activity_task.cancel!
 									end
-								rescue AWS::SimpleWorkflow::ActivityTask::CancelRequestedError
-									# cleanup after ourselves
-									activity_task.cancel!
 								end
 							end
+						rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
+							$logger.error "An action relating to an expired workflow was sent. Probably the activity took longer than the execution timeout span."
+						rescue RuntimeError => e
+							if e.to_s == "already responded"
+								# this error sometimes appear if failing and completing happen very close in time and SWF doesn't report correctly the responded? status
+								Glider.logger.warn "Ignoring error responding to activity task failed. Most likely caused because your task failed the activity already."
+							else
+								raise e
+							end
 						end
-					rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
-						$logger.error "An action relating to an expired workflow was sent. Probably the activity took longer than the execution timeout span. Killing activity process."
-						exit 1
 					end
 				end
 			end

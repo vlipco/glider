@@ -138,15 +138,16 @@ module Glider
 					$0 = "ruby #{workflow_type.name}-#{workflow_type.version}"
 					signal_handling
 					Glider.logger.info "Startig worker for #{workflow_type.name} (pid #{Process.pid})"
-					begin
-						domain.decision_tasks.poll workflow_type.name do |decision_task|
-							task_lock! do
-								process_decision_task workflow_type, decision_task
+					loop do
+						begin
+							domain.decision_tasks.poll workflow_type.name do |decision_task|
+								task_lock! do
+									process_decision_task workflow_type, decision_task
+								end
 							end
+						rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
+							$logger.error "An action relating to an expired decision was sent. Probably the decider took longer than the decision timeout span."
 						end
-					rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
-						$logger.error "An action relating to an expired decision was sent. Probably the decider took longer than the decision timeout span. Killing decider process."
-						exit 1
 					end
 				end
 			end
