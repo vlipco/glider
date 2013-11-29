@@ -54,7 +54,7 @@ module Glider
 				if ProcessManager.use_forking
 					Process.exit! 0
 				else
-					puts "Killing #{Thread.current}"
+					#puts "Killing #{Thread.current}"
 					Thread.current.exit
 				end
 			end
