@@ -37,4 +37,5 @@ else
 
 end
 
+Glider::ProcessManager.use_forking = false
 
