@@ -94,19 +94,34 @@ module Glider
 			# used for timeouts and activity task completed
 			def activity_name_for(task, event)
 				# taken from SimplerWorkflow
-		 		completed_event = task.workflow_execution.events.reverse_order.find do |e| 
-		 			e.id == event.attributes.scheduled_event_id
-		 		end
+		 		completed_event = completed_event_for(task, event)
 		 		activity_name = completed_event.attributes.activity_type.name
 				inflected_name = ActiveSupport::Inflector.underscore activity_name
 			end
+
+			def completed_event_for(task, event)
+				task.workflow_execution.events.reverse_order.find do |e| 
+		 			e.id == event.attributes.scheduled_event_id
+		 		end
+			end
+
+			def control_for_completed_event(event)
+				begin
+					event.attributes.control
+				rescue
+					nil
+				end
+			end
+
 
 			def process_decision_task(workflow_type, task)
 				workflow_id = task.workflow_execution.workflow_id
 				task.new_events.each do |event| 
 					event_name = ActiveSupport::Inflector.underscore(event.event_type).to_sym
 					if should_call_workflow_target? event_name, task.workflow_execution
-					 	target_instance = self.new task, event
+						completed_event = completed_event_for(task, event)
+						control = 
+					 	target_instance = self.new task, event, completed_event, control
 					 	data = workflow_data_for(event_name, event)
 					 	# convert signals to event names!
 					 	case event_name
