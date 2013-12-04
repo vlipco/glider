@@ -101,16 +101,18 @@ module Glider
 
 			def completed_event_for(task, event)
 				task.workflow_execution.events.reverse_order.find do |e| 
-		 			e.id == event.attributes.scheduled_event_id
-		 		end
+					e.id == event.attributes.scheduled_event_id
+				end
+		 	rescue
+				nil
 			end
 
 			def control_for_completed_event(event)
-				begin
-					event.attributes.control
-				rescue
-					nil
-				end
+			
+				event.attributes.control
+			rescue
+				nil
+			
 			end
 
 
@@ -120,7 +122,7 @@ module Glider
 					event_name = ActiveSupport::Inflector.underscore(event.event_type).to_sym
 					if should_call_workflow_target? event_name, task.workflow_execution
 						completed_event = completed_event_for(task, event)
-						control = 
+						control = completed_event ? control_for_completed_event(completed_event) : nil
 					 	target_instance = self.new task, event, completed_event, control
 					 	data = workflow_data_for(event_name, event)
 					 	# convert signals to event names!
