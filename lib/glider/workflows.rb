@@ -100,19 +100,21 @@ module Glider
 			end
 
 			def completed_event_for(task, event)
-				task.workflow_execution.events.reverse_order.find do |e| 
-					e.id == event.attributes.scheduled_event_id
-				end
-		 	rescue
-				nil
+				begin
+					task.workflow_execution.events.reverse_order.find do |e| 
+			 			e.id == event.attributes.scheduled_event_id
+			 		end
+			 	rescue ArgumentError
+			 		nil
+			 	end
 			end
 
 			def control_for_completed_event(event)
-			
-				event.attributes.control
-			rescue
-				nil
-			
+				begin
+					event.attributes.control
+				rescue ArgumentError
+					nil
+				end
 			end
 
 
