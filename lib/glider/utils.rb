@@ -1,7 +1,11 @@
 module Glider
 
 	def Glider.logger
-		$logger ||= Logger.new STDOUT
+		@logger ||=  Logger.new STDOUT
+	end
+
+	def Glider.logger=(nlogger)
+		@logger = nlogger
 	end
 
 	def Glider.execute(domain_name, workflow_name, version, options={})
