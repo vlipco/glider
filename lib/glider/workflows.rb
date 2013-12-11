@@ -66,7 +66,7 @@ module Glider
 			def workflow_data_for(event_name, event)
 				data = 	case event_name
 						when :workflow_execution_started #:decision_task_scheduled
-							event.attributes.input
+							begin event.attributes.input rescue nil end
 						when :workflow_execution_signaled
 							begin event.attributes.input rescue nil end
 						when :activity_task_completed
