@@ -81,7 +81,7 @@ module Glider
 								nil
 							end
 						end 
-				return data if data.nil?
+				return {} if data.nil?
 				# try to parse as JSON
 				begin
 
@@ -100,17 +100,22 @@ module Glider
 			end
 
 			def completed_event_for(task, event)
-				
-					task.workflow_execution.events.reverse_order.find do |e| 
-			 			e.id == event.attributes.scheduled_event_id
-			 		end
+
+				task.workflow_execution.events.reverse_order.find do |e| 
+		 			begin
+		 				e.id == event.attributes.scheduled_event_id
+		 			rescue ArgumentError
+		 				e.id == event.attributes.started_event_id
+		 			end
+		 		end
+
 			 	rescue ArgumentError
 			 		nil
-			 	
+
 			end
 
 			def control_for_completed_event(event)
-				
+
 					event.attributes.control
 				rescue ArgumentError
 					nil
@@ -120,7 +125,7 @@ module Glider
 
 			def process_decision_task(workflow_type, task)
 				workflow_id = task.workflow_execution.workflow_id
-				task.new_events.each do |event| 
+				task.new_events.each do |event|
 					event_name = ActiveSupport::Inflector.underscore(event.event_type).to_sym
 					if should_call_workflow_target? event_name, task.workflow_execution
 						completed_event = completed_event_for(task, event)
@@ -140,8 +145,8 @@ module Glider
 						end
 						
 						Glider.logger.info "event_name=#{event_name} workflow=#{workflow_type.name} workflow_id=#{workflow_id}"
+
 						target_instance.send workflow_type.name, event_name, event, data
-						
 
 						# ensure proper response was given (aka a decision taken)
 						decisions = task.instance_eval {@decisions}
