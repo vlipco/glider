@@ -165,6 +165,7 @@ module Glider
 							domain.decision_tasks.poll_for_single_task workflow_type.name do |decision_task|
 								task_lock! do
 									process_decision_task workflow_type, decision_task
+									task.complete!
 								end
 							end
 						rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
