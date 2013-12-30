@@ -104,6 +104,7 @@ module Glider
 				else
 					Signal.trap('TERM') {puts "Killing!"; Glider::ProcessManager.kill_threads}
 					Signal.trap('INT') {puts "Killing!"; Glider::ProcessManager.kill_threads}
+					Signal.trap('USR2') {puts "Killing-!"; Glider::ProcessManager.kill_threads}
 					@workers.each do |worker_proc|
 						start_thread worker_proc
 					end
