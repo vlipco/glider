@@ -54,7 +54,7 @@ module Glider
 					Glider.logger.info "Startig worker for #{activity_type.name} activity (pid #{Process.pid})"
 					loop do
 						begin
-							Glider.logger.info "Polling for activity task in for #{activity_type.name}"
+							Glider.logger.debug "Polling for activity task in for #{activity_type.name}"
 							domain.activity_tasks.poll_for_single_task activity_type.name do |activity_task|
 								task_lock! do
 									begin

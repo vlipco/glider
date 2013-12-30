@@ -166,7 +166,7 @@ module Glider
 					Glider.logger.info "Startig worker for #{workflow_type.name} (pid #{Process.pid})"
 					loop do
 						begin
-							Glider.logger.info "Polling for decision task in for #{workflow_type.name}"
+							Glider.logger.debug "Polling for decision task in for #{workflow_type.name}"
 							domain.decision_tasks.poll_for_single_task workflow_type.name do |decision_task|
 								task_lock! do
 									process_decision_task workflow_type, decision_task
