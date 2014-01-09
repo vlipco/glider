@@ -162,7 +162,7 @@ module Glider
 
 			def loop_block_for_workflow(workflow_type)
 				Proc.new do
-					$0 = "ruby #{workflow_type.name}-#{workflow_type.version}"
+					$0 = "ruby #{workflow_type.name}-#{workflow_type.version}"  if Glider::ProcessManager.use_forking
 					signal_handling
 					Glider.logger.info "Startig worker for #{workflow_type.name} (pid #{Process.pid})"
 					loop do

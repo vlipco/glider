@@ -49,7 +49,7 @@ module Glider
 
 			def loop_block_for_activity(activity_type)
 				Proc.new do
-					$0 = "ruby #{activity_type.name}-#{activity_type.version}"
+					$0 = "ruby #{activity_type.name}-#{activity_type.version}" if Glider::ProcessManager.use_forking
 					signal_handling
 					Glider.logger.info "Startig worker for #{activity_type.name} activity (pid #{Process.pid})"
 					loop do

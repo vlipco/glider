@@ -94,18 +94,25 @@ module Glider
 				children << [thread, worker_proc]
 			end
 
-			def start_workers
+			def start_workers(from_class: nil)
+				if from_class
+					Glider::logger.info "Loading workers defined in #{from_class}" 
+					workers_to_boot = workers[from_class.to_s]
+				else
+					# select all workers
+					Glider::logger.info "Loading workers from all classes"
+					workers_to_boot = workers.values.flatten
+				end
 				if use_forking
 					$leader_pid ||= Process.pid
 					Signal.trap('TERM') {Glider::ProcessManager.kill_forks}
 					Signal.trap('INT') {Glider::ProcessManager.kill_forks}
 					# todo start workers as forks
-					@workers.each do |grouping_class_name, workers_group|
-						Glider::logger.info "Starting workers from group #{grouping_class_name}"
-						workers_group.each do |worker_proc|
-							start_fork worker_proc
-						end
+					
+					workers_to_boot.each do |worker_proc|
+						start_fork worker_proc
 					end
+					
 					Thread.new do
 						monitor_children
 					end
@@ -113,12 +120,11 @@ module Glider
 				else
 					Signal.trap('TERM') {Glider::ProcessManager.kill_threads}
 					Signal.trap('INT') {Glider::ProcessManager.kill_threads}
-					@workers.each do |grouping_class_name, workers_group|
-						Glider::logger.info "Starting workers from group #{grouping_class_name}"
-						workers_group.each do |worker_proc|
-							start_thread worker_proc
-						end
+					
+					workers_to_boot.each do |worker_proc|
+						start_thread worker_proc
 					end
+					
 					#binding.pry
 					children.each {|ch| ch[0].join }
 				end

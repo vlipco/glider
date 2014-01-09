@@ -2,7 +2,7 @@ require_relative 'shared_boot'
 
 class MySWF < Glider::Component
 
-	workers 10
+	workers 1
 	domain :gt3
 
 	register_workflow :say_hi, '1.5'
@@ -21,4 +21,4 @@ class MySWF < Glider::Component
 	end
 end
 
-Glider::ProcessManager.start_workers
+Glider::ProcessManager.start_workers from_class: MySWF
