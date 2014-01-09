@@ -168,14 +168,14 @@ module Glider
 					loop do
 						begin
 							Glider.logger.debug "Polling for task for #{workflow_type.name}"
-							before_polling_hook.call workflow_type.name
+							before_polling_hook.call workflow_type.name if before_polling_hook
 							domain.decision_tasks.poll_for_single_task workflow_type.name do |decision_task|
 								task_lock! do
 									process_decision_task workflow_type, decision_task
 									task.complete!
 								end
 							end
-							after_polling_hook.call workflow_type.name
+							after_polling_hook.call workflow_type.name if after_polling_hook
 						rescue Glider::ProcessManager::ThreatExitSignal
 							execute_exit
 						rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
