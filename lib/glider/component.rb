@@ -17,8 +17,19 @@ module Glider
 			{name: name.to_s, version: version.to_s}
 		end
 
-
 		class << self
+
+			attr_reader :before_polling_hook, :after_polling_hook
+
+			# registed a polling hook
+			def before_polling(&block)
+				@before_polling_hook = block
+			end
+
+			# registed a polling hook
+			def after_polling(&block)
+				@after_polling_hook = block
+			end
 
 			# handles the exit flag differently for forks and threads
 			def time_to_exit

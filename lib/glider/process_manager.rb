@@ -95,12 +95,13 @@ module Glider
 			end
 
 			def start_workers(from_class: nil)
+				mode = use_forking ? "forks" : "threads"
 				if from_class
-					Glider::logger.info "Loading workers defined in #{from_class}" 
+					Glider::logger.info "Loading workers defined in #{from_class} as #{mode}" 
 					workers_to_boot = workers[from_class.to_s]
 				else
 					# select all workers
-					Glider::logger.info "Loading workers from all classes"
+					Glider::logger.info "Loading workers from all classes as #{mode}"
 					workers_to_boot = workers.values.flatten
 				end
 				if use_forking

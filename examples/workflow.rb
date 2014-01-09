@@ -7,6 +7,14 @@ class MySWF < Glider::Component
 
 	register_workflow :say_hi, '1.5'
 
+	before_polling do |workflow_name|
+		Glider::logger.info "POLLING #{workflow_name}"
+	end
+
+	after_polling do |workflow_name|
+		Glider::logger.info "POLLING OK #{workflow_name}"
+	end
+
 	def say_hi(event_name, event, data)
 		case event_name
 		when :workflow_execution_started, :hello_world_activity_timed_out
