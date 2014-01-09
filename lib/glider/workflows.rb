@@ -176,6 +176,8 @@ module Glider
 								end
 							end
 							after_polling_hook.call workflow_type.name
+						rescue Glider::ProcessManager::ThreatExitSignal
+							execute_exit
 						rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
 							$logger.error "An action relating to an expired decision was sent. Probably the decider took longer than the decision timeout span."
 						end
