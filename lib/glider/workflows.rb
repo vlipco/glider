@@ -6,7 +6,7 @@ module Glider
 		#require 'rubygems'
 		#require 'active_support'
 		#require 'active_support/inflector'
-	
+		attr_reader :completed_event, :control
 
 		class << self
 			def workflows
@@ -29,7 +29,8 @@ module Glider
 					workflow_type = domain.workflow_types[name.to_s, version.to_s]
 				end
 				workers.times do 
-					ProcessManager.register_worker loop_block_for_workflow(workflow_type)
+					# we store the worker scoped to this class so that we can start workers from class
+					ProcessManager.register_worker self.to_s, loop_block_for_workflow(workflow_type)
 				end
 			end
 

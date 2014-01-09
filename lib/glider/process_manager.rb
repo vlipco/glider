@@ -47,7 +47,9 @@ module Glider
 			end
 
 			def workers
-				@workers ||= []
+				# stores arrays of workers and the key is the name of the class where they were defined (as string)
+				# ej. workers["SettlementActivities"] = [wk1, wk2, ...]
+				@workers ||= {} 
 			end
 
 
@@ -69,8 +71,12 @@ module Glider
 				Glider::ProcessManager.kill_forks
 			end
 
-			def register_worker(worker_proc)
-				workers << worker_proc
+			def register_worker(grouping_class_name, worker_proc)
+				if workers[grouping_class_name]
+					workers[grouping_class_name] << worker_proc
+				else
+					workers[grouping_class_name] = [worker_proc]
+				end
 			end
 
 			def start_fork(worker_proc)
@@ -94,8 +100,11 @@ module Glider
 					Signal.trap('TERM') {Glider::ProcessManager.kill_forks}
 					Signal.trap('INT') {Glider::ProcessManager.kill_forks}
 					# todo start workers as forks
-					@workers.each do |worker_proc|
-						start_fork worker_proc
+					@workers.each do |grouping_class_name, workers_group|
+						Glider::logger.info "Starting workers from group #{grouping_class_name}"
+						workers_group.each do |worker_proc|
+							start_fork worker_proc
+						end
 					end
 					Thread.new do
 						monitor_children
@@ -104,8 +113,11 @@ module Glider
 				else
 					Signal.trap('TERM') {Glider::ProcessManager.kill_threads}
 					Signal.trap('INT') {Glider::ProcessManager.kill_threads}
-					@workers.each do |worker_proc|
-						start_thread worker_proc
+					@workers.each do |grouping_class_name, workers_group|
+						Glider::logger.info "Starting workers from group #{grouping_class_name}"
+						workers_group.each do |worker_proc|
+							start_thread worker_proc
+						end
 					end
 					#binding.pry
 					children.each {|ch| ch[0].join }

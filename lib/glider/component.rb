@@ -4,7 +4,7 @@ module Glider
 
 	class Component
 
-		attr_reader :task, :event, :completed_event, :control
+		attr_reader :task, :event
 
 		def initialize(task, event=nil, completed_event=nil, control=nil)
 			@task = task

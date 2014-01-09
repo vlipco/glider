@@ -6,7 +6,7 @@
 
 Gem::Specification.new do |s|
   s.name = "glider"
-  s.version = "0.1.9"
+  s.version = "0.2.0"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["David Pelaez"]
@@ -33,15 +33,15 @@ Gem::Specification.new do |s|
     "lib/glider/process_manager.rb",
     "lib/glider/utils.rb",
     "lib/glider/workflows.rb",
-    "pkg/glider-0.1.8.gem",
-    "pkg/glider-0.1.9.gem",
+    #{}"pkg/glider-0.1.8.gem",
+    #{}"pkg/glider-0.1.9.gem",
     "readme.md"
   ]
   s.homepage = "http://github.com/vlipco/glider"
   s.licenses = ["MIT"]
   s.require_paths = ["lib"]
   s.rubygems_version = "2.1.9"
-  s.summary = "Minimal opinionated wrapper around SimpleWorkflow"
+  s.summary = "Minimal opinionated wrapper around Amazon SimpleWorkflow heavily inspired in SimplerWorkflow Gem"
 
   if s.respond_to? :specification_version then
     s.specification_version = 4

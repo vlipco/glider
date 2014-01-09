@@ -28,7 +28,7 @@ module Glider
 					activity_type = domain.activity_types[name.to_s, version.to_s]
 				end
 				workers.times do 
-					ProcessManager.register_worker loop_block_for_activity(activity_type)
+					ProcessManager.register_worker self.to_s, loop_block_for_activity(activity_type)
 				end
 			end
 
