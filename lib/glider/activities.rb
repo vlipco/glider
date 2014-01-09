@@ -55,7 +55,7 @@ module Glider
 					loop do
 						begin
 							Glider.logger.debug "Polling for task for #{activity_type.name}"
-							before_polling_hook.call workflow_type.name if before_polling_hook
+							before_polling_hook.call activity_type.name if before_polling_hook
 							domain.activity_tasks.poll_for_single_task activity_type.name do |activity_task|
 								task_lock! do
 									begin
@@ -73,7 +73,7 @@ module Glider
 									end
 								end
 							end
-							after_polling_hook.call workflow_type.name if after_polling_hook
+							after_polling_hook.call activity_type.name if after_polling_hook
 						rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
 							$logger.error "An action relating to an expired workflow was sent. Probably the activity took longer than the execution timeout span."
 						rescue Glider::ProcessManager::ThreatExitSignal
