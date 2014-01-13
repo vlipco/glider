@@ -172,7 +172,7 @@ module Glider
 							domain.decision_tasks.poll_for_single_task workflow_type.name do |decision_task|
 								task_lock! do
 									process_decision_task workflow_type, decision_task
-									task.complete!
+									decision_task.complete!
 								end
 							end
 							after_polling_hook.call workflow_type.name if after_polling_hook
