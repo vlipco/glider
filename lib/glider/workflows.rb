@@ -39,6 +39,8 @@ class Glider::Component
                 ProcessManager.register_worker self.to_s, loop_block_for_workflow(workflow_type)
             end
         end
+        
+        private
 
         # used to determine if a :decised_task_started event should be renamed to :workflow_execution_started
         # when there are no previous decisions. This is because there's no special event name for this case.
@@ -50,7 +52,7 @@ class Glider::Component
             return false
         end
 
-        def workflow_data_for(event_name, event)
+        def decider_data_of(event_name, event)
             data = 	case event_name
                 when :workflow_execution_started; begin event.attributes.input rescue {} end
                 when :workflow_execution_signaled; begin event.attributes.input rescue {} end
@@ -60,8 +62,8 @@ class Glider::Component
                     begin
                         event.attributes.result
                     rescue
-                        msg ="no input or result in event, data={} event=#{event_name} attributes=#{event.attributes.to_h}"
-                        Glider.logger.debug and nil
+                        signature ="data={} event=#{event_name} attributes=#{event.attributes.to_h}"
+                        Glider.logger.debug "no input or result in event #{signature}" and nil
                     end
                 end
             begin # try to parse data as JSON
@@ -113,7 +115,7 @@ class Glider::Component
                     completed_event = completed_event_for(task, event)
                     control = completed_event ? control_for_completed_event(completed_event) : nil
                     target_instance = self.new task, event, completed_event, control
-                    data = workflow_data_for(event_name, event)
+                    data = decider_data_of event_name, event
                     event_name = case event_name # handle convenience method event_name renaming, if applicable
                         when :workflow_execution_signaled; "#{event.attributes.signal_name}_signal"
                         when :activity_task_completed; "#{activity_name_for(task, event)}_activity_completed"
