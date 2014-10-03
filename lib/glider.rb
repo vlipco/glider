@@ -1,11 +1,7 @@
-#$LOAD_PATH << File.dirname(__FILE__)
-
-#require 'active_support/all'
 require 'json'
 require 'aws-sdk'
 require 'active_support/inflector'
-# For hash with indifferent access
-require 'active_support/core_ext/hash'
+require 'active_support/core_ext/hash' # For hash with indifferent access
 
 
 require 'glider/utils'
