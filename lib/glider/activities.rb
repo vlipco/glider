@@ -52,7 +52,7 @@ module Glider
                     if Glider::ProcessManager.use_forking
                         $0 = "ruby #{activity_type.name}-#{activity_type.version}"
                     end
-                    signal_handling
+                    register_signal_handlers
                     Glider.logger.info "Startig worker for #{activity_type.name} activity (pid #{Process.pid})"
                     loop do
                         begin

@@ -72,7 +72,7 @@ module Glider
 				end
 			end
 
-			def signal_handling
+			def register_signal_handlers
 				if ProcessManager.use_forking
 					Signal.trap('USR1') {graceful_exit}
 				end
