@@ -1,3 +1,5 @@
+$LOAD_PATH << File.dirname(__FILE__)
+
 require 'json'
 require 'aws-sdk'
 require 'active_support/inflector'

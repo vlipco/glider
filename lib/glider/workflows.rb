@@ -166,6 +166,3 @@ class Glider::Component
 
     end # class methods
 end # class definition
-
-  end
-end
