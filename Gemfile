@@ -1,6 +1,6 @@
 source "https://rubygems.org"
 
-gem 'aws-sdk'
+gem 'aws-sdk', '< 2.0'
 gem 'activesupport'
 gem 'json'
 # Add dependencies to develop your gem here.
