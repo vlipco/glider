@@ -1,3 +1,6 @@
+# Monkey Patch a class to allow access to the @decisions variable
+class AWS::SimpleWorkflow::DecisionTask; attr_reader :decisions; end
+
 class Glider::Component
 
     attr_reader :completed_event, :control
@@ -100,38 +103,37 @@ class Glider::Component
         rescue ArgumentError # if there's no control
             nil
         end
-
-        def process_decision_task(workflow_type, task)
-            workflow_id = task.workflow_execution.workflow_id
-            task.new_events.each do |event|
-                event_name = ActiveSupport::Inflector.underscore(event.event_type).to_sym
-                # given the event name, determine if an instance of the workflow should be called
-                # this happens because some events are not directly related to the need of an action on our side
-                # but are instead normal part of SWF's detailed trail of the execution
-                if MUTED_EVENTS.include? event_name
-                    msg = "Skipping decider call event=#{event_name} workflow_id=#{task.workflow_execution.workflow_id}"
-                    Glider.logger.debug(msg) and return true
+        
+        # given a workflow event, handle it
+        def process_workflow_event(event, task, wkf_name)
+            event_name = ActiveSupport::Inflector.underscore(event.event_type).to_sym
+            wkf_id = task.workflow_execution.workflow_id
+            # given the event name, determine if an instance of the workflow should be called
+            # this happens because some events are not directly related to the need of an action on our side
+            # but are instead normal part of SWF's detailed trail of the execution
+            if MUTED_EVENTS.include? event_name
+                msg = "Skipping decider call event=#{event_name} workflow_id=#{wkf_id}"
+                Glider.logger.debug(msg) and return false
+            else
+                completed_event = completed_event_for(task, event)
+                control = completed_event ? control_for_completed_event(completed_event) : nil
+                target_instance = self.new task, event, completed_event, control
+                data = decider_data_of event_name, event
+                event_name = case event_name # handle convenience method event_name renaming, if applicable
+                    when :workflow_execution_signaled; "#{event.attributes.signal_name}_signal"
+                    when :activity_task_completed; "#{activity_name_for(task, event)}_activity_completed"
+                    when :activity_task_failed; "#{activity_name_for(task, event)}_activity_failed"
+                    when :activity_task_timed_out; "#{activity_name_for(task, event)}_activity_timed_out"
+                    else event_name
+                end.to_sym
+                signature = "event_name=#{event_name} workflow=#{wkf_name} workflow_id=#{wkf_id}"
+                Glider.logger.info signature
+                target_instance.send wkf_name, event_name, event, data # execute the decider's instance
+                decisions = task.decisions # get the decisions from the decision task
+                if decisions.length == 0 && !task.responded? # ensure that a decision (next step) was made
+                    Glider.logger.warn "No decision was made #{signature}"
                 else
-                    completed_event = completed_event_for(task, event)
-                    control = completed_event ? control_for_completed_event(completed_event) : nil
-                    target_instance = self.new task, event, completed_event, control
-                    data = decider_data_of event_name, event
-                    event_name = case event_name # handle convenience method event_name renaming, if applicable
-                        when :workflow_execution_signaled; "#{event.attributes.signal_name}_signal"
-                        when :activity_task_completed; "#{activity_name_for(task, event)}_activity_completed"
-                        when :activity_task_failed; "#{activity_name_for(task, event)}_activity_failed"
-                        when :activity_task_timed_out; "#{activity_name_for(task, event)}_activity_timed_out"
-                        else event_name
-                    end.to_sym
-                    signature = "event_name=#{event_name} workflow=#{workflow_type.name} workflow_id=#{workflow_id}"
-                    Glider.logger.info signature
-                    target_instance.send workflow_type.name, event_name, event, data # execute the decider's instance
-                    decisions = task.instance_eval {@decisions} # get the decisions from the
-                    if decisions.length == 0 && !task.responded? # ensure that a decision (next step) was made
-                        Glider.logger.warn "No decision was made #{signature}"
-                    else
-                        Glider.logger.debug decisions
-                    end
+                    Glider.logger.debug decisions
                 end
             end
         end
@@ -150,8 +152,12 @@ class Glider::Component
                         before_polling_hook.call workflow_type.name if before_polling_hook
                         domain.decision_tasks.poll_for_single_task workflow_type.name do |decision_task|
                             task_lock! do
-                              process_decision_task workflow_type, decision_task
-                              decision_task.complete!
+                                #process_decision_task workflow_type, decision_task
+                                workflow_id = decision_task.workflow_execution.workflow_id
+                                decision_task.new_events.each do |event|
+                                    process_workflow_event event, decision_task, workflow_type.name
+                                end
+                                decision_task.complete!
                             end
                         end
                         after_polling_hook.call workflow_type.name if after_polling_hook
