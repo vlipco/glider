@@ -16,8 +16,7 @@ module Glider
         def activity(name, version)
             {name: name.to_s, version: version.to_s}
         end
-        
-        
+
 
         class << self
 
@@ -89,7 +88,7 @@ module Glider
             end
 
             def swf
-                @swf ||= AWS::SimpleWorkflow.new
+                self == Glider::Component ? @swf ||= AWS::SimpleWorkflow.new : Component::swf
             end
 
             # both setter and getter
@@ -101,11 +100,11 @@ module Glider
             def domain(domain_name=nil, retention_period: 10)
                 if domain_name
                     begin
-                        @domain = swf.domains[domain_name.to_s]
+                        @domain = Component::swf.domains[domain_name.to_s]
                         @domain.status
                     rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault => e
                         # create it if necessary
-                        @domain = swf.domains.create(domain_name.to_s, retention_period)
+                        @domain = Component::swf.domains.create(domain_name.to_s, retention_period)
                     end
                 else
                     @domain

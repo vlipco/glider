@@ -21,16 +21,16 @@ describe Glider::Component do
         allow(fake_domains).to receive(:[]).and_return(single_domain)
         expect(fake_domains).not_to receive(:create)
     end
-    
+
     describe "workflow"do
-        
+
         before(:each) do
             allow(Glider::Component).to receive(:completed_event_for).and_return(nil)
             allow_any_instance_of(Glider::Component).to receive(:test_decider).and_return(true)
             allow(event).to receive(:event_type).and_return("MyFakeEvent")
             allow(Glider::Component).to receive(:decider_data_of).and_return( {key: 123}.to_json )
         end
-        
+
         let(:event){ instance_double "AWS::SimpleWorkflow::HistoryEvent" }
 
         let(:task) do

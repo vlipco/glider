@@ -12,7 +12,7 @@ end
 
 group :test do
 	gem 'rspec'
-	#gem 'mocha'
+	gem 'mocha'
 	#gem 'vcr'
 	#gem 'webmock', '>= 1.8.0', '< 1.16'
 	gem 'pry'

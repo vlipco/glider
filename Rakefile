@@ -20,6 +20,8 @@ end
 Jeweler::RubygemsDotOrgTasks.new
 
 task :repl do
+    require 'bundler/setup'
+    Bundler.require :default, :development, :test
     require File.expand_path('../lib/glider.rb', __FILE__)
     pry
 end
