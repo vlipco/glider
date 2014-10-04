@@ -30,20 +30,6 @@ module Glider
                 end
             end
 
-            def process_input(input)
-                if input.nil?
-                    nil
-                else
-                    # try to parse input as json
-                    begin
-                        input = ActiveSupport::HashWithIndifferentAccess.new JSON.parse(input)
-                    rescue JSON::ParserError
-                        input
-                    end
-                end
-            end
-
-
 
             def loop_block_for_activity(activity_type)
                 Proc.new do
@@ -63,7 +49,7 @@ module Glider
                                         wkf_id = activity_task.workflow_execution.workflow_id
                                         Glider.logger.info "Executing activity=#{act_name} workflow_id=#{wkf_id}"
                                         target_instance = self.new activity_task
-                                        input = process_input(activity_task.input)
+                                        input = try_to_parse_as_json(activity_task.input)
                                         act_result = target_instance.send activity_type.name, input
                                          
                                         unless activity_task.responded?

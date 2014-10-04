@@ -16,10 +16,20 @@ module Glider
         def activity(name, version)
             {name: name.to_s, version: version.to_s}
         end
+        
+        
 
         class << self
 
             attr_reader :before_polling_hook, :after_polling_hook
+
+            def try_to_parse_as_json(data)
+                begin # try to parse data as JSON
+                    return ActiveSupport::HashWithIndifferentAccess.new JSON.parse(data)
+                rescue JSON::ParserError, TypeError
+                    return data
+                end
+            end
 
             # registed a polling hook
             def before_polling(&block)

@@ -69,11 +69,6 @@ class Glider::Component
                         Glider.logger.debug "no input or result in event #{signature}" and nil
                     end
                 end
-            begin # try to parse data as JSON
-              return ActiveSupport::HashWithIndifferentAccess.new JSON.parse(data)
-            rescue JSON::ParserError
-              return data
-            end
         end
 
         # inflects timeouts and activity task completed events into snake case
@@ -128,7 +123,8 @@ class Glider::Component
                 end.to_sym
                 signature = "event_name=#{event_name} workflow=#{wkf_name} workflow_id=#{wkf_id}"
                 Glider.logger.info signature
-                target_instance.send wkf_name, event_name, event, data # execute the decider's instance
+                 # execute on the decider's instance the method called wkf_name
+                target_instance.send wkf_name, event_name, event, try_to_parse_as_json(data)
                 decisions = task.decisions # get the decisions from the decision task
                 if decisions.length == 0 && !task.responded? # ensure that a decision (next step) was made
                     Glider.logger.warn "No decision was made #{signature}"

@@ -22,4 +22,6 @@ module Glider
 		raise AWS::SimpleWorkflow::Errors::UnknownResourceFault.new unless workflow_execution
 		workflow_execution.signal signal_name.to_s, options
 	end
+	
+
 end
