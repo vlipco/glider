@@ -10,7 +10,7 @@ Is a simplified wrapper around Amazon Simpler Workflow. It's heavily inspired in
 * Documentation
 * Examples
 
-== Copyright
+== License
 
-Released by Vlipco under The MIT License
+Released by Vlipco S.A.S (Colombia) under The MIT License
 

@@ -41,28 +41,7 @@ describe Glider::Component do
             next task_double
         end
 
-        it "skips all muted events" do
-            allow(Glider::Component).to receive(:decider_data_of).and_return({})
-            
-
-            %w(
-                ActivityTaskScheduled
-                ActivityTaskStarted
-                DecisionTaskScheduled
-                DecisionTaskStarted
-                DecisionTaskCompleted
-                MarkerRecorded
-                TimerStarted
-                StartChildWorkflowExecutionInitiated
-                StartChildWorkflowExecutionStarted
-                SignalExternalWorkflowExecutionInitiated
-                RequestCancelExternalWorkflowExecutionInitiated
-            ).each do |sk|
-                allow(event).to receive(:event_type).and_return(sk)
-                did_process = Glider::Component.send :process_workflow_event, event, task, :test_decider
-                expect(did_process).to be(false)
-            end
-        end
+        
         
         it "executes the correct handling method with the correct context" do
             allow(Glider::Component).to receive(:decider_data_of).and_return("le_data")
@@ -74,14 +53,7 @@ describe Glider::Component do
             did_process = Glider::Component.send :process_workflow_event, event, task, :test_decider
             expect(did_process).to be(true)
         end
-        
-        it "converts JSON data to a ruby hash" do
-            fake_implementation = double "fake_implementation"
-            allow(Glider::Component).to receive(:new).and_return(fake_implementation)
-            expect(fake_implementation).to receive(:test_decider).with(:my_fake_event, event, {key: 123})
-            did_process = Glider::Component.send :process_workflow_event, event, task, :test_decider
-            expect(did_process).to be(true)
-        end
+
     end
     
     describe "activity" do

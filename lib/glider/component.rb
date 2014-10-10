@@ -4,14 +4,43 @@ module Glider
 
     class Component
 
-        attr_reader :task, :event
+        attr_reader :task, :workflow_execution, :workflow_name, :event, :event_name, :event_data
 
-        def initialize(task, event=nil, completed_event=nil, control=nil)
-            @task = task
-            @event = event
-            @completed_event = completed_event
-            @control = control
+        def initialize(swf_task, swf_event)
+            @task = swf_task
+            @workflow_execution = task.workflow_execution
+            @workflow_name = workflow_execution.workflow_type.name
+            case task.class
+                when AWS::SimpleWorkflow::DecisionTask
+                    Glider.logger.debug "Creating component instance to handle decision task"
+                    @event = swf_event
+                    @event_name = event.name
+                    @event_data = event.decision_data
+                when AWS::SimpleWorkflow::ActivityTask
+                    Glider.logger.debug "Creating component instance to handle an activity task"
+                else
+                    raise "Unknown activity type given during initialization"
+            end
         end
+        
+        def process!
+            if task.class == AWS::SimpleWorkflow::DecisionTask
+                process_decision_event!
+            else AWS::SimpleWorkflow::ActivityTask
+                # TODO
+            end
+        end
+        
+        def process_decision_event!
+            Glider.logger.info "Processing #{event.signature}"
+            send workflow_name
+            if task.resolved? # ensure that a decision (next step) was made
+                Glider.logger.debug decisions
+            else
+                Glider.logger.warn "No decision was made #{signature}"
+            end
+        end
+
 
         def activity(name, version)
             {name: name.to_s, version: version.to_s}
@@ -21,14 +50,6 @@ module Glider
         class << self
 
             attr_reader :before_polling_hook, :after_polling_hook
-
-            def try_to_parse_as_json(data)
-                begin # try to parse data as JSON
-                    return ActiveSupport::HashWithIndifferentAccess.new JSON.parse(data)
-                rescue JSON::ParserError, TypeError
-                    return data
-                end
-            end
 
             # registed a polling hook
             def before_polling(&block)
