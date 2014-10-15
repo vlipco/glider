@@ -6,46 +6,58 @@ module Glider
 
         attr_reader :task, :workflow_execution, :workflow_name, :event, :event_name, :event_data
 
-        def initialize(swf_task, swf_event)
+        def initialize(swf_task, swf_event=nil)
             @task = swf_task
             @workflow_execution = task.workflow_execution
             @workflow_name = workflow_execution.workflow_type.name
-            case task.class
-                when AWS::SimpleWorkflow::DecisionTask
-                    Glider.logger.debug "Creating component instance to handle decision task"
-                    @event = swf_event
-                    @event_name = event.name
-                    @event_data = event.decision_data
-                when AWS::SimpleWorkflow::ActivityTask
-                    Glider.logger.debug "Creating component instance to handle an activity task"
-                else
-                    raise "Unknown activity type given during initialization"
-            end
-        end
-        
-        def process!
             if task.class == AWS::SimpleWorkflow::DecisionTask
-                process_decision_event!
-            else AWS::SimpleWorkflow::ActivityTask
-                # TODO
+                raise "Initializing with a decision task also requires the event argument" unless swf_event
+                Glider.logger.debug "Creating component instance to handle decision task"
+                @event = swf_event
+                @event_name = event.name
+                @event_data = event.decision_data
+            elsif AWS::SimpleWorkflow::ActivityTask
+                Glider.logger.debug "Creating component instance to handle an activity task"
+            else
+                raise "Unknown activity type given during initialization"
             end
         end
         
-        def process_decision_event!
-            Glider.logger.info "Processing #{event.signature}"
-            send workflow_name
-            if task.resolved? # ensure that a decision (next step) was made
-                Glider.logger.debug decisions
-            else
-                Glider.logger.warn "No decision was made #{signature}"
+        def process
+            if task.class == AWS::SimpleWorkflow::DecisionTask
+                process_decision_event
+            else AWS::SimpleWorkflow::ActivityTask
+                perform_activity_work
             end
         end
-
-
-        def activity(name, version)
-            {name: name.to_s, version: version.to_s}
+        
+        def perform_activity_work
+            begin
+                result = send task.activity_type.name, task.input
+                unless task.responded?
+                    Glider.logger.info "Executing #{task.signature}"
+                    task.complete! result: result.to_s
+                end
+            rescue AWS::SimpleWorkflow::ActivityTask::CancelRequestedError
+                activity_task.cancel! # cleanup after ourselves if the order's been given
+            rescue Exception => e
+                task.fail! reason: 'uncaught_exception', details: e
+            end
         end
-
+        
+        def process_decision_event
+            Glider.logger.info "Processing #{event.signature}"
+            begin
+                send workflow_name
+                if task.resolved? # ensure that a decision (next step) was made
+                    Glider.logger.debug decisions
+                else
+                    Glider.logger.warn "No decision was made #{event.signature}"
+                end
+            rescue Exception => e
+                task.fail_workflow_execution reason: 'uncaught_exception', details: e
+            end
+        end
 
         class << self
 

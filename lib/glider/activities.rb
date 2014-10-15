@@ -31,7 +31,7 @@ module Glider
             end
 
 
-            def loop_block_for_activity(activity_type)
+            def activity_poller_for(activity_type)
                 Proc.new do
                     if Glider::ProcessManager.use_forking
                         $0 = "ruby #{activity_type.name}-#{activity_type.version}"
@@ -45,25 +45,12 @@ module Glider
                             before_polling_hook.call act_name if before_polling_hook
                             domain.activity_tasks.poll_for_single_task(act_name) do |activity_task|
                                 task_lock! do
-                                    begin
-                                        wkf_id = activity_task.workflow_execution.workflow_id
-                                        Glider.logger.info "Executing activity=#{act_name} workflow_id=#{wkf_id}"
-                                        target_instance = self.new activity_task
-                                        input = try_to_parse_as_json(activity_task.input)
-                                        act_result = target_instance.send activity_type.name, input
-                                         
-                                        unless activity_task.responded?
-                                            activity_task.complete! result: act_result.to_s
-                                        end
-                                    rescue AWS::SimpleWorkflow::ActivityTask::CancelRequestedError
-                                        # cleanup after ourselves
-                                        activity_task.cancel!
-                                    end
+                                    self.new activity_task
                                 end
                             end
                             after_polling_hook.call act_name if after_polling_hook
                         rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
-                            $logger.error "Sent an action an expired task. Was the execution timeout span exceeded?"
+                            Glider.logger.error "Sent an action an expired task. Was the execution timeout span exceeded?"
                         rescue Glider::ProcessManager::ThreatExitSignal
                             execute_exit
                         rescue RuntimeError => e

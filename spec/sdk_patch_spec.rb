@@ -105,7 +105,7 @@ describe AWS::SimpleWorkflow::HistoryEvent do
             expect(fake_event.decision_data).to eq('le_reason')
         end
         it 'is parsed as JSON' do
-            # indifferent access used for equality comparison
+            # indifferent access used for hash equality comparison
             result = ActiveSupport::HashWithIndifferentAccess.new( { key: "something" } )
             allow(fake_event.attributes).to receive('result').and_return(result.to_json)
             expect(fake_event.decision_data).to eq(result)

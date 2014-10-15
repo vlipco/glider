@@ -10,6 +10,12 @@ class Glider::Component
         def workflows
           @workflows ||= []
         end
+        
+        
+        def activity(name, version)
+            {name: name.to_s, version: version.to_s}
+        end
+
 
         def register_workflow(name, version, options={})
             options = {

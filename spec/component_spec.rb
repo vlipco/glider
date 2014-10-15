@@ -22,44 +22,64 @@ describe Glider::Component do
         expect(fake_domains).not_to receive(:create)
     end
 
+    let(:execution) do
+        execution_double = instance_double "AWS::SimpleWorkflow::WorkflowExecution", { workflow_id: 'le_workflow' }
+        allow(execution_double).to receive_message_chain( :workflow_type, name: 'test_decider')
+        next execution_double
+    end
+
     describe "workflow"do
 
-        before(:each) do
-            allow(Glider::Component).to receive(:completed_event_for).and_return(nil)
-            allow_any_instance_of(Glider::Component).to receive(:test_decider).and_return(true)
-            allow(event).to receive(:event_type).and_return("MyFakeEvent")
-            allow(Glider::Component).to receive(:decider_data_of).and_return( {key: 123}.to_json )
+        let(:event) do
+            instance_double "AWS::SimpleWorkflow::HistoryEvent", {
+                decision_data: 'le_data', signature: 'xxx', name: 'my_fake_event'
+            }
         end
-
-        let(:event){ instance_double "AWS::SimpleWorkflow::HistoryEvent" }
 
         let(:task) do
-            task_double = instance_double "AWS::SimpleWorkflow::DecisionTask"
-            execution_double = double(workflow_id: 'le_workflow')
-            allow(task_double).to receive(:workflow_execution).and_return(execution_double)
-            allow(task_double).to receive(:decisions).and_return([true])
-            next task_double
+            instance_double "AWS::SimpleWorkflow::DecisionTask", {
+                class: AWS::SimpleWorkflow::DecisionTask,
+                workflow_execution: execution,
+                decisions: [true]
+            }
         end
 
-        
-        
-        it "executes the correct handling method with the correct context" do
-            allow(Glider::Component).to receive(:decider_data_of).and_return("le_data")
-
-            fake_implementation = double "fake_implementation"
-            allow(Glider::Component).to receive(:new).and_return(fake_implementation)
-
-            expect(fake_implementation).to receive(:test_decider).with(:my_fake_event, event, 'le_data')
-            did_process = Glider::Component.send :process_workflow_event, event, task, :test_decider
-            expect(did_process).to be(true)
+        it "terminates itself when there's an untrapped exception" do
+            allow_any_instance_of(Glider::Component).to receive(:test_decider).and_raise(NoMethodError)
+            expect(task).to receive('fail_workflow_execution')
+            target_instance = Glider::Component.new(task,event)
+            target_instance.process
         end
-
+        
     end
     
     describe "activity" do
-        
-        it "captures untrapped exceptions"
-        it "converts JSON input to a ruby hash"
-        it "send the method resolt to SWF"
+
+        let(:task) do
+            activity_double = instance_double "AWS::SimpleWorkflow::ActivityTask", {
+                'class' => AWS::SimpleWorkflow::ActivityTask,
+                'input' => 'le_input',
+                'responded?' => false,
+                'workflow_execution' => execution,
+                'signature' => 'xxx'
+            }
+            allow(activity_double).to receive_message_chain('activity_type.name').and_return('test_activity')
+            next activity_double
+        end
+        let(:target_instance) { Glider::Component.new task }
+
+        it "captures untrapped exceptions" do
+            allow(target_instance).to receive(:test_activity).and_raise(NoMethodError)
+            expect(task).to receive('fail!')
+            target_instance.process
+        end
+
+        it "sends the method result to SWF" do
+            allow(target_instance).to receive(:test_activity).and_return('le_result')
+            expected_args = { result: "le_result" }
+            expect(task).to receive('complete!').with(expected_args)
+            target_instance.process
+            
+        end
     end
 end

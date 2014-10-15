@@ -26,7 +26,12 @@ module AWS
                 "workflow=#{name} workflow_id=#{id}"
             end
         end
-        
+
+        class ActivityTask
+            def signature
+                "activity=#{activity_type.name} workflow_id=#{workflow_execution.id}"
+            end
+        end
         # https://github.com/aws/aws-sdk-ruby/blob/master/lib/aws/simple_workflow/decision_task.rb
         class DecisionTask
 
