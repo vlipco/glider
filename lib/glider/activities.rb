@@ -26,7 +26,7 @@ module Glider
                 end
 
                 workers.times do
-                    ProcessManager.register_worker self.to_s, loop_block_for_activity(activity_type)
+                    ProcessManager.register_worker self.to_s, activity_poller_for(activity_type)
                 end
             end
 
