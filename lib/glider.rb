@@ -12,4 +12,4 @@ require 'glider/component'
 require 'glider/process_manager'
 
 require 'glider/workflows'
-#require 'glider/activities'
+require 'glider/activities'
