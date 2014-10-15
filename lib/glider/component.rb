@@ -4,7 +4,7 @@ module Glider
 
     class Component
 
-        attr_reader :task, :workflow_execution, :workflow_name, :event, :event_name, :event_data
+        attr_reader :task, :workflow_execution, :workflow_name, :event
 
         def initialize(swf_task, swf_event=nil)
             @task = swf_task
@@ -14,8 +14,6 @@ module Glider
                 raise "Initializing with a decision task also requires the event argument" unless swf_event
                 Glider.logger.debug "Creating component instance to handle decision task"
                 @event = swf_event
-                @event_name = event.name
-                @event_data = event.decision_data
             elsif AWS::SimpleWorkflow::ActivityTask
                 Glider.logger.debug "Creating component instance to handle an activity task"
             else
@@ -48,7 +46,7 @@ module Glider
         def process_decision_event
             Glider.logger.info "Processing #{event.signature}"
             begin
-                send workflow_name
+                send workflow_name, event.name, event.decision_data
                 if task.resolved? # ensure that a decision (next step) was made
                     Glider.logger.debug decisions
                 else
