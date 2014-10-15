@@ -3,18 +3,23 @@
 require 'bundler'
 Bundler.require(:default, :development, :test)
 
-
-require 'jeweler'
 Jeweler::Tasks.new do |gem|
-  # gem is a Gem::Specification... see http://docs.rubygems.org/read/chapter/20 for more options
   gem.name = "glider"
   gem.homepage = "http://github.com/vlipco/glider"
   gem.license = "MIT"
-  gem.summary = "Minimal opinionated wrapper around SimpleWorkflow"
-  gem.description = "Minimal opinionated wrapper around SimpleWorkflow"
   gem.email = "david@vlipco.co"
   gem.authors = ["David Pelaez"]
-  # dependencies defined in Gemfile
+
+  gem.files.exclude 'example/'
+  gem.files.exclude 'spec/**/*'
+  gem.files.exclude 'docs/**/*'
+  gem.files.exclude '.rspec'
+  gem.files.exclude 'Rakefile'
+
+  gem.summary = "Minimal opinionated wrapper around SimpleWorkflow"
+  
+  gem.description = "Glider simplifies the usage of Amazon SWF by adopting convention over configuration and exposing a simplified object oriented API seeking to offer Ruby libraries' traditional simplicity while keeping the benefits of SWF like auditability, timers, timeouts and process decoupling."
+ 
 end
 
 Jeweler::RubygemsDotOrgTasks.new

@@ -1,4 +1,4 @@
-require_relative 'shared_boot'
+require_relative 'boot'
 
 class MySWF < Glider::Component
 

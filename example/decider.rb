@@ -1,4 +1,4 @@
-require_relative 'shared_boot'
+require_relative 'boot'
 
 class MySWF < Glider::Component
 
@@ -20,7 +20,7 @@ class MySWF < Glider::Component
 		when :workflow_execution_started, :hello_world_activity_timed_out
 			task.schedule_activity_task activity(:hello_world, 1.5), input: data.to_json
 		when :test_signal
-			# do what?		
+			# do what?
 		when :hello_world_activity_failed
 			$logger.error "EXPECTED ERROR!"
 		when :hello_world_activity_completed
