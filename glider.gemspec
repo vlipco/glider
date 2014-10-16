@@ -11,22 +11,31 @@ Gem::Specification.new do |s|
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.require_paths = ["lib"]
   s.authors = ["David Pelaez"]
-  s.date = "2014-10-15"
+  s.date = "2014-10-16"
   s.description = "Glider simplifies the usage of Amazon SWF by adopting convention over configuration and exposing a simplified object oriented API seeking to offer Ruby libraries' traditional simplicity while keeping the benefits of SWF like auditability, timers, timeouts and process decoupling."
   s.email = "david@vlipco.co"
   s.files = [
     "Gemfile",
     "Gemfile.lock",
     "VERSION",
+    "example/Gemfile",
+    "example/Gemfile.lock",
+    "example/Procfile",
+    "example/boot.rb",
+    "example/decider.rb",
+    "example/trigger.rb",
+    "example/worker.rb",
     "glider.gemspec",
     "lib/glider.rb",
-    "lib/glider/activities.rb",
-    "lib/glider/component.rb",
-    "lib/glider/process_manager.rb",
-    "lib/glider/sdk_patch.rb",
-    "lib/glider/test_helpers.rb",
-    "lib/glider/utils.rb",
-    "lib/glider/workflows.rb",
+    "lib/glider/__activities.rb",
+    "lib/glider/__process_manager.rb",
+    "lib/glider/__test_helpers.rb",
+    "lib/glider/__workflows.rb",
+    "lib/glider/aws_sdk_patch.rb",
+    "lib/glider/component_class_helpers.rb",
+    "lib/glider/component_instance.rb",
+    "lib/glider/component_polling.rb",
+    "lib/glider/glider_globals.rb",
     "readme.md"
   ]
   s.homepage = "http://github.com/vlipco/glider"
@@ -41,20 +50,20 @@ Gem::Specification.new do |s|
       s.add_runtime_dependency(%q<aws-sdk>, ["< 2.0"])
       s.add_runtime_dependency(%q<activesupport>, [">= 0"])
       s.add_runtime_dependency(%q<json>, [">= 0"])
-      s.add_runtime_dependency(%q<childprocess>, ["~> 0.5.5"])
+      s.add_runtime_dependency(%q<spawnling>, ["~> 2.1.5"])
       s.add_development_dependency(%q<jeweler>, ["~> 2.0.1"])
     else
       s.add_dependency(%q<aws-sdk>, ["< 2.0"])
       s.add_dependency(%q<activesupport>, [">= 0"])
       s.add_dependency(%q<json>, [">= 0"])
-      s.add_dependency(%q<childprocess>, ["~> 0.5.5"])
+      s.add_dependency(%q<spawnling>, ["~> 2.1.5"])
       s.add_dependency(%q<jeweler>, ["~> 2.0.1"])
     end
   else
     s.add_dependency(%q<aws-sdk>, ["< 2.0"])
     s.add_dependency(%q<activesupport>, [">= 0"])
     s.add_dependency(%q<json>, [">= 0"])
-    s.add_dependency(%q<childprocess>, ["~> 0.5.5"])
+    s.add_dependency(%q<spawnling>, ["~> 2.1.5"])
     s.add_dependency(%q<jeweler>, ["~> 2.0.1"])
   end
 end

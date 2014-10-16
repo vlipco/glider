@@ -3,19 +3,22 @@ module Glider
         class << self
 
             def start_pollers
-                #Glider.logger.info "Startig poller for #{type.name}"
-                #if swf_type_object.class == AWS::SimpleWorkflow::WorkflowType
-                #    loop { workflow_decider_cycle }
-                #else
-                #    loop { acitvity_worker_cycle }
-                #end
+                spawns = []
+                pollers.each_with_index do |poller, index|
+                    process_name = "#{$0}.#{index}-#{poller[:name]}"
+                    spawns << Spawnling.new(argv: process_name, kill: true, method: :fork) do
+                        poller[:block].call
+                    end
+                end
+                # wait for all N blocks of code to finish running (should never happen)
+                Spawnling.wait spawns
             end
 
             private
     
             def acitvity_worker_cycle(type)
-                Glider.logger.debug "Polling for task for #{type.name}"
                 @before_polling_hook.call type.name if @before_polling_hook
+                Glider.logger.debug "Polling for activity task for #{type.name}"
                 domain.activity_tasks.poll_for_single_task(type.name) do |activity_task|
                     #TODO task_lock! do
                         self.new activity_task
@@ -35,9 +38,9 @@ module Glider
             end
             
             def workflow_decider_cycle(type)
-                Glider.logger.debug "Polling for task for #{workflow_type.name}"
-                @before_polling_hook.call workflow_type.name if @before_polling_hook
-                domain.decision_tasks.poll_for_single_task workflow_type.name do |decision_task|
+                @before_polling_hook.call type.name if @before_polling_hook
+                Glider.logger.debug "Polling for decision task for workflow #{type.name}"
+                domain.decision_tasks.poll_for_single_task type.name do |decision_task|
                     task_lock! do
                         decision_task.new_events.each do |event|
                             if event.muted?

@@ -1,6 +1,17 @@
 module Glider
     class Component
         class << self
+            
+            def start_all_pollers
+                descendants.each do |child|
+                    Glider.logger.info "Starting pollers of #{child}"
+                    child.start_pollers
+                end
+            end
+            
+            def descendants
+                ObjectSpace.each_object(Class).select { |klass| klass < self }
+            end
 
             def before_polling(&block)
                 @before_polling_hook = block
@@ -21,7 +32,10 @@ module Glider
                 rescue AWS::SimpleWorkflow::Errors::TypeAlreadyExistsFault # if already registered
                     workflow_type = domain.workflow_types[name.to_s, version.to_s]
                 end
-                pollers << Proc.new { loop { workflow_decider_cycle(workflow_type) } }
+                pollers << {
+                    block: Proc.new { loop { workflow_decider_cycle(workflow_type) } },
+                    name: workflow_type.name
+                }
             end
             
             def register_activity(name, version, options={})
@@ -31,7 +45,10 @@ module Glider
                 rescue AWS::SimpleWorkflow::Errors::TypeAlreadyExistsFault # already registered
                     activity_type = domain.activity_types[name.to_s, version.to_s]
                 end
-                pollers << Proc.new { loop { acitvity_worker_cycle(activity_type) } }
+                pollers << {
+                    block: Proc.new { loop { acitvity_worker_cycle(activity_type) } },
+                    name: activity_type.name
+                }
             end
 
             def domain(domain_name=nil, retention_period: 10) # both setter and getter

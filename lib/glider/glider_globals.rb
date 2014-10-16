@@ -26,6 +26,7 @@ module Glider
     end
 
     def Glider.logger=(new_logger)
+        Spawnling.logger = new_logger # used in Spawnling
         @logger = new_logger
     end
 

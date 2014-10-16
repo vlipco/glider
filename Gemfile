@@ -3,7 +3,7 @@ source "https://rubygems.org"
 gem 'aws-sdk', '< 2.0'
 gem 'activesupport'
 gem 'json'
-gem 'childprocess', '~> 0.5.5'
+gem 'spawnling', '~> 2.1.5'
 
 group :development do
   gem 'jeweler', '~> 2.0.1'
