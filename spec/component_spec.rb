@@ -5,7 +5,7 @@ describe Glider::Component do
     let(:fake_domains) { instance_double "AWS::SimpleWorkflow::DomainCollection" }
     
     before :each do
-        allow(Glider::Component.swf).to receive(:domains).and_return(fake_domains)
+        allow(Glider.swf).to receive(:domains).and_return(fake_domains)
     end
     
     it "creates a domain if it's missing" do

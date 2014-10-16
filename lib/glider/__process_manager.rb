@@ -1,5 +1,57 @@
 # singleton class handling all children, useful for daemonization
 
+
+### OLD in include Comparable
+
+            # handles the exit flag differently for forks and threads
+            def time_to_exit
+                ProcessManager.use_forking ? @time_to_exit : Thread.current[:time_to_exit]
+            end
+
+            def task_lock!
+                #Glider.logger.info "=> Starting task: #{Thread.current[:x]}"
+                Thread.current[:in_task] = true
+                @in_task = true
+                yield
+            ensure
+                @in_task = false
+                Thread.current[:in_task] = false
+                execute_exit if time_to_exit # in case an exit signal was received during task processing
+            end
+
+            def graceful_exit
+                if ProcessManager.use_forking
+                    if @in_task
+                        @time_to_exit = true
+                    else
+                        execute_exit
+                    end
+                else
+                    if Thread.current[:in_task]
+                        Thread.current[:time_to_exit] = true
+                    else
+                        execute_exit
+                    end
+                end
+            end
+
+            def execute_exit
+                if ProcessManager.use_forking
+                    Process.exit! 0
+                else
+                    #puts "Killing #{Thread.current}"
+                    Thread.current.exit
+                end
+            end
+
+            def register_signal_handlers
+                if ProcessManager.use_forking
+                    Signal.trap('USR1') {graceful_exit}
+                end
+            end
+    
+####
+
 module Glider
 
     module ProcessManager

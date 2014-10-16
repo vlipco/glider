@@ -5,11 +5,9 @@ require 'aws-sdk'
 require 'active_support/inflector'
 require 'active_support/core_ext/hash' # For hash with indifferent access
 
-require 'glider/sdk_patch'
-require 'glider/utils'
+require 'glider/aws_sdk_patch'
+require 'glider/glider_globals'
 
-require 'glider/component'
-require 'glider/process_manager'
-
-require 'glider/workflows'
-require 'glider/activities'
+require 'glider/component_class_helpers'
+require 'glider/component_polling'
+require 'glider/component_instance'
