@@ -32,14 +32,21 @@ module AWS
                 "activity=#{activity_type.name} workflow_id=#{workflow_execution.id}"
             end
         end
+
         # https://github.com/aws/aws-sdk-ruby/blob/master/lib/aws/simple_workflow/decision_task.rb
         class DecisionTask
 
             attr_reader :decisions
-
-            def resolved?
-                decisions.length > 0 && task.responded?
+            
+            alias_method :original_schedule_activity_task, :schedule_activity_task
+            
+            def schedule_activity_task(activity_type, options = {})
+                # this only accepts hashes
+                options = options.merge({task_list: "#{activity_type[:name]}-#{activity_type[:version]}"})
+                original_schedule_activity_task activity_type, options
             end
+            
+
         end
 
         # https://github.com/aws/aws-sdk-ruby/blob/master/lib/aws/simple_workflow/history_event.rb
@@ -57,7 +64,10 @@ module AWS
                 :start_child_workflow_execution_initiated,
                 :start_child_workflow_execution_started,
                 :signal_external_workflow_execution_initiated,
-                :request_cancel_external_workflow_execution_initiated ]
+                :request_cancel_external_workflow_execution_initiated,
+                :external_workflow_execution_signaled ]
+                
+            # TODO decide how to handle decision task timed out
             
             def ancestor
                 workflow_execution.events.reverse_order.find do |e|
@@ -89,6 +99,8 @@ module AWS
                 ActiveSupport::Inflector.underscore(event_type).to_sym
             end
 
+            # TODO convert time outs to replay of the last events!
+            # TODO handle ScheduleActivityTaskFailed because activity doesn't exist
             def name
                 case raw_name # handle convenience method event_name renaming, if applicable
                     when :workflow_execution_signaled; "#{attributes.signal_name}_signal"

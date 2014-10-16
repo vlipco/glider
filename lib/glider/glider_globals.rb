@@ -1,19 +1,19 @@
 module Glider
 
-    EXECUTION_DEFAULTS = { task_start_to_close_timeout: 5 }
+    EXECUTION_DEFAULTS = { task_start_to_close_timeout: 3 }
     
     WORKFLOW_DEFAULTS = {
-        :default_task_list => name.to_s,
+        #:default_task_list => 'glider',
         :default_child_policy => :request_cancel,
-        :default_task_start_to_close_timeout => 10, # decider timeout
-        :default_execution_start_to_close_timeout => 120
+        :default_task_start_to_close_timeout => 3, # decider timeout
+        :default_execution_start_to_close_timeout => 10
     }
     
     ACTIVITY_DEFAULTS = {
-        :default_task_list => name.to_s,
-        :default_task_schedule_to_start_timeout => :none,
-        :default_task_start_to_close_timeout => 60,
-        :default_task_schedule_to_close_timeout => :none,
+        #:default_task_list => name.to_s,
+        :default_task_schedule_to_start_timeout => 3,
+        :default_task_start_to_close_timeout => 3,
+        :default_task_schedule_to_close_timeout => 6,
         :default_task_heartbeat_timeout => :none
     }
     
@@ -33,7 +33,7 @@ module Glider
     def Glider.execute(domain_name, workflow_name, version, options={})
         swf = AWS::SimpleWorkflow.new
         domain = swf.domains[domain_name.to_s]
-        options = EXECUTION_DEFAULTS.merge(options)
+        options = EXECUTION_DEFAULTS.merge({task_list: "#{workflow_name}-#{version}"}).merge(options)
         domain.workflow_types[workflow_name.to_s, version.to_s].start_execution options
     end
 

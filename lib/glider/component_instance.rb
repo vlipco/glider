@@ -5,6 +5,10 @@ module Glider
     class Component
 
         attr_reader :task, :workflow_execution, :workflow_name, :event
+        
+        def activity(name, version)
+            {name: name.to_s, version: version.to_s}
+        end
 
         def initialize(swf_task, swf_event=nil)
             @task = swf_task
@@ -41,7 +45,8 @@ module Glider
             rescue AWS::SimpleWorkflow::ActivityTask::CancelRequestedError
                 activity_task.cancel! # cleanup after ourselves if the order's been given
             rescue Exception => e
-                task.fail! reason: 'uncaught_exception', details: e
+                Glider.logger.error "Rescued unexpected exception on #{task.activity_type.name}: #{e}"
+                task.fail! reason: 'uncaught_exception', details: e.to_s
             end
         end
         
@@ -49,12 +54,15 @@ module Glider
             Glider.logger.info "Processing #{event.signature}"
             begin
                 send workflow_name, event.name, event.decision_data
-                if task.resolved? # ensure that a decision (next step) was made
-                    Glider.logger.debug decisions
+                if task.decisions.length > 0 # ensure that a decision (next step) was made
+                    Glider.logger.debug task.decisions
                 else
-                    Glider.logger.warn "No decision was made #{event.signature}"
+                    Glider.logger.error "Failing workflow since no decision was made in response to #{event.signature}"
+                    task.fail_workflow_execution reason: 'empty_decision', details: event.signature
                 end
             rescue Exception => e
+                Glider.logger.error "Rescued unexpected exception during decision of workflow=#{workflow_name}: #{e}"
+                e.backtrace.each {|trace| Glider.logger.error trace }
                 task.fail_workflow_execution reason: 'uncaught_exception', details: e
             end
         end

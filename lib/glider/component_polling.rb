@@ -10,18 +10,23 @@ module Glider
                         poller[:block].call
                     end
                 end
-                # wait for all N blocks of code to finish running (should never happen)
-                Spawnling.wait spawns
+                return spawns
             end
 
             private
     
             def acitvity_worker_cycle(type)
                 @before_polling_hook.call type.name if @before_polling_hook
-                Glider.logger.debug "Polling for activity task for #{type.name}"
-                domain.activity_tasks.poll_for_single_task(type.name) do |activity_task|
+                task_list = "#{type.name}-#{type.version}"
+                Glider.logger.debug "Polling for activity task for #{type.name} on list=#{task_list}"
+                domain.activity_tasks.poll_for_single_task task_list do |activity_task|
+                    Glider.logger.debug "Activity task obtained for #{type.name} activity"
                     #TODO task_lock! do
-                        self.new activity_task
+                        handler = self.new activity_task
+                        Glider.logger.debug "Triggering handler for #{type.name}"
+                        result = handler.process
+                        Glider.logger.debug "#{type.name} work completed, sending result"
+                        activity_task.complete! result: result.to_s unless activity_task.responded?
                     #end
                 end
                 @after_polling_hook.call type.name if @after_polling_hook
@@ -39,22 +44,35 @@ module Glider
             
             def workflow_decider_cycle(type)
                 @before_polling_hook.call type.name if @before_polling_hook
-                Glider.logger.debug "Polling for decision task for workflow #{type.name}"
-                domain.decision_tasks.poll_for_single_task type.name do |decision_task|
-                    task_lock! do
+                task_list = "#{type.name}-#{type.version}"
+                Glider.logger.debug "Polling for decision task for workflow #{type.name} on list=#{task_list}"
+                domain.decision_tasks.poll_for_single_task task_list do |decision_task|
+                    #task_lock! do
+                        Glider.logger.debug "Decision task obtained for workflow #{type.name}, processing new events"
                         decision_task.new_events.each do |event|
                             if event.muted?
                                 Glider.logger.debug "Skipping decider call #{event.signature}"
-                                return false
+                                next false
                             end
-                            self.new(task, event).process
+                            
+                            handler = self.new(decision_task, event)
+                            #binding.pry
+                            Glider.logger.debug "Triggering handler for #{event.signature}"
+                            handler.process
+                            Glider.logger.debug "Processing completed #{event.signature}"
                         end
-                        decision_task.complete!
-                    end
+                        #Glider.logger.debug "%%%%%%%%%%%%%%%% Closing decision task"
+                        #decision_task.complete! this should happen automatically
+                    #end
                 end
                 @after_polling_hook.call type.name if @after_polling_hook
             rescue AWS::SimpleWorkflow::Errors::UnknownResourceFault
                 Glider.logger.error "An action an expired task was sent, maybe the decision timed out"
+            #rescue Exception => e
+            #    # since we don't want to loop to stop (think of it as monitoring), we yield a specific exception
+            #    # and a special alert message that can be monitored in the logs
+            #    Glider.logger.error "Rescuing unexpected exception in decider to recover worker: #{e}"
+            #    Glider.logger.fatal "HUMAN_INTERVENTION_REQUIRED"
             end
 
         end

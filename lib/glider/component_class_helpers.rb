@@ -2,11 +2,15 @@ module Glider
     class Component
         class << self
             
-            def start_all_pollers
+            def start_all_pollers_and_block
+                all_spawns = []
                 descendants.each do |child|
                     Glider.logger.info "Starting pollers of #{child}"
-                    child.start_pollers
+                    all_spawns << child.start_pollers
                 end
+                all_spawns.flatten!
+                Glider.logger.debug "Waiting for #{all_spawns.length} spawned processes"
+                Spawnling.wait all_spawns
             end
             
             def descendants
@@ -21,12 +25,8 @@ module Glider
                 @after_polling_hook = block
             end
 
-            def activity(name, version)
-                {name: name.to_s, version: version.to_s}
-            end
-
             def register_workflow(name, version, options={})
-                options = WORKFLOW_DEFAULTS.merge options
+                options = WORKFLOW_DEFAULTS.merge({default_task_list: "#{name}-#{version}"}).merge options
                 begin # try to register
                     workflow_type = domain.workflow_types.create name.to_s, version.to_s, options
                 rescue AWS::SimpleWorkflow::Errors::TypeAlreadyExistsFault # if already registered
@@ -39,7 +39,7 @@ module Glider
             end
             
             def register_activity(name, version, options={})
-                options = ACTIVITY_DEFAULTS.merge options
+                options = ACTIVITY_DEFAULTS.merge({default_task_list: "#{name}-#{version}"}).merge options
                 begin
                     activity_type = domain.activity_types.create name.to_s, version.to_s, options
                 rescue AWS::SimpleWorkflow::Errors::TypeAlreadyExistsFault # already registered
