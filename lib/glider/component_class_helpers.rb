@@ -16,6 +16,12 @@ module Glider
             def descendants
                 ObjectSpace.each_object(Class).select { |klass| klass < self }
             end
+            
+            # return a fake target instance will all the stub/mocks
+            def mock_activity_task(activity, input, workflow_execution: 'le_execution', workflow_name: 'le_workflow')
+                
+                
+            end
 
             def before_polling(&block)
                 @before_polling_hook = block

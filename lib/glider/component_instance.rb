@@ -46,7 +46,8 @@ module Glider
                 activity_task.cancel! # cleanup after ourselves if the order's been given
             rescue Exception => e
                 Glider.logger.error "Rescued unexpected exception on #{task.activity_type.name}: #{e}"
-                task.fail! reason: 'uncaught_exception', details: e.to_s
+                e.backtrace.each {|trace| Glider.logger.error "  #{trace}" }
+                task.fail! reason: 'uncaught_exception', details: e.class.to_s
             end
         end
         
@@ -62,8 +63,8 @@ module Glider
                 end
             rescue Exception => e
                 Glider.logger.error "Rescued unexpected exception during decision of workflow=#{workflow_name}: #{e}"
-                e.backtrace.each {|trace| Glider.logger.error trace }
-                task.fail_workflow_execution reason: 'uncaught_exception', details: e
+                e.backtrace.each {|trace| Glider.logger.error "  #{trace}" }
+                task.fail_workflow_execution reason: 'uncaught_exception', details: e.class.to_s
             end
         end
 
