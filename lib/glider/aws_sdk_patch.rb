@@ -31,6 +31,17 @@ module AWS
             def signature
                 "activity=#{activity_type.name} workflow_id=#{workflow_execution.id}"
             end
+            
+            alias_method :original_input, :input
+            
+            def input
+                # try to parse data as JSON
+                begin
+                    return ActiveSupport::HashWithIndifferentAccess.new JSON.parse(original_input)
+                rescue JSON::ParserError, TypeError
+                    return original_input
+                end
+            end
         end
 
         # https://github.com/aws/aws-sdk-ruby/blob/master/lib/aws/simple_workflow/decision_task.rb
