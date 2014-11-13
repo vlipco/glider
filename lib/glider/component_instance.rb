@@ -64,7 +64,9 @@ module Glider
             rescue Exception => e
                 Glider.logger.error "Rescued unexpected exception during decision of workflow=#{workflow_name}: #{e}"
                 e.backtrace.each {|trace| Glider.logger.error "  #{trace}" }
-                task.fail_workflow_execution reason: 'uncaught_exception', details: e.class.to_s
+                msg = "#{e} - #{e.backtrace.first}"
+                Glider.logger.error "Failing workflow with details: #{msg}"
+                task.fail_workflow_execution reason: 'uncaught_exception', details: msg
             end
         end
 
