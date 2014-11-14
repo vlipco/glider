@@ -5,8 +5,8 @@ module Glider
             def start_pollers
                 spawns = []
                 pollers.each_with_index do |poller, index|
-                    process_name = "#{$0}.#{index}-#{poller[:name]}"
-                    spawns << Spawnling.new(argv: process_name, kill: true, method: :fork) do
+                    #process_name = "#{$0}.#{index}-#{poller[:name]}"
+                    spawns << Spawnling.new(method: :thread) do
                         poller[:block].call
                     end
                 end
